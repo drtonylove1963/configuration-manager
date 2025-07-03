@@ -1,0 +1,314 @@
+@page "/configurations/create-modern"
+@rendermode InteractiveServer
+@using Client.Services
+@using Application.DTOs.Configuration
+@using Application.DTOs.Environment
+@using Application.DTOs.ConfigurationGroup
+@using Domain.ValueObjects
+@inject IConfigurationApiClient ConfigurationClient
+@inject IEnvironmentApiClient EnvironmentClient
+@inject IConfigurationGroupApiClient GroupClient
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Create Configuration</PageTitle>
+
+<div class="rz-p-4">
+    <!-- Breadcrumb -->
+    <RadzenBreadCrumb class="rz-mb-4">
+        <RadzenBreadCrumbItem Path="/" Text="Dashboard" />
+        <RadzenBreadCrumbItem Path="/configurations" Text="Configurations" />
+        <RadzenBreadCrumbItem Text="Create" />
+    </RadzenBreadCrumb>
+
+    <!-- Page Header -->
+    <RadzenStack Gap="1rem" class="rz-mb-6">
+        <RadzenText TextStyle="TextStyle.H3">Create New Configuration</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body1" Style="color: var(--rz-text-secondary-color);">Add a new configuration setting to your environment.</RadzenText>
+    </RadzenStack>
+
+    <!-- Form Card -->
+    <RadzenCard>
+        <RadzenTemplateForm Data="@_model" Submit="@HandleValidSubmit" TItem="CreateConfigurationModel">
+            <RadzenRow Gap="2rem">
+                <!-- Configuration Key -->
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenLabel Text="Configuration Key" Style="font-weight: 500;" />
+                        <RadzenTextBox @bind-Value="_model.Key"
+                                       Placeholder="Enter configuration key"
+                                       Style="width: 100%;" />
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                            Must start with a letter and contain only letters, numbers, dots, underscores, and hyphens
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <!-- Value Type -->
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenLabel Text="Value Type" Style="font-weight: 500;" />
+                        <RadzenDropDown @bind-Value="_model.ValueType"
+                                        Data="@_valueTypes"
+                                        TextProperty="Text"
+                                        ValueProperty="Value"
+                                        Style="width: 100%;" />
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <!-- Value Input -->
+                <RadzenColumn Size="12">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenLabel Text="Value" Style="font-weight: 500;" />
+                        @if (_model.ValueType == ConfigurationValueType.Boolean)
+                        {
+                            <RadzenRadioButtonList @bind-Value="_boolValue"
+                                                   Data="@_boolOptions"
+                                                   TextProperty="Text"
+                                                   ValueProperty="Value"
+                                                   Orientation="Orientation.Horizontal" />
+                        }
+                        else if (_model.ValueType == ConfigurationValueType.Json)
+                        {
+                            <RadzenTextArea @bind-Value="_model.Value"
+                                            Rows="4"
+                                            Placeholder="Enter JSON value"
+                                            Style="width: 100%;" />
+                        }
+                        else
+                        {
+                            <RadzenTextBox @bind-Value="_model.Value"
+                                           Placeholder="Enter value"
+                                           Style="width: 100%;" />
+                        }
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <!-- Description -->
+                <RadzenColumn Size="12">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenLabel Text="Description" Style="font-weight: 500;" />
+                        <RadzenTextArea @bind-Value="_model.Description"
+                                        Rows="3"
+                                        Placeholder="Describe what this configuration is used for"
+                                        Style="width: 100%;" />
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <!-- Environment -->
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenLabel Text="Environment" Style="font-weight: 500;" />
+                        <RadzenDropDown @bind-Value="_selectedEnvironmentId"
+                                        Data="@_environments"
+                                        TextProperty="Name"
+                                        ValueProperty="Id"
+                                        Placeholder="Select Environment"
+                                        Change="@OnEnvironmentChanged"
+                                        Style="width: 100%;" />
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <!-- Group -->
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenLabel Text="Group (Optional)" Style="font-weight: 500;" />
+                        <RadzenDropDown @bind-Value="_selectedGroupId"
+                                        Data="@_groups"
+                                        TextProperty="Name"
+                                        ValueProperty="Id"
+                                        Placeholder="Select Group"
+                                        AllowClear="true"
+                                        Change="@OnGroupChanged"
+                                        Style="width: 100%;" />
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <!-- Default Value -->
+                <RadzenColumn Size="12">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenLabel Text="Default Value (Optional)" Style="font-weight: 500;" />
+                        <RadzenTextBox @bind-Value="_model.DefaultValue"
+                                       Placeholder="Enter default value"
+                                       Style="width: 100%;" />
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <!-- Checkboxes -->
+                <RadzenColumn Size="12">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="2rem">
+                        <RadzenCheckBox @bind-Value="_model.IsRequired" Name="required" />
+                        <RadzenLabel Text="Required" Component="required" Style="cursor: pointer;" />
+
+                        <RadzenCheckBox @bind-Value="_model.IsEncrypted" Name="encrypted" />
+                        <RadzenLabel Text="Encrypted" Component="encrypted" Style="cursor: pointer;" />
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <!-- Form Actions -->
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" class="rz-mt-6">
+                <RadzenButton Text="Cancel"
+                              ButtonStyle="ButtonStyle.Light"
+                              Click="@(() => Navigation.NavigateTo("/configurations"))" />
+                <RadzenButton Text="@(_saving ? "Creating..." : "Create Configuration")"
+                              ButtonStyle="ButtonStyle.Primary"
+                              ButtonType="ButtonType.Submit"
+                              IsBusy="@_saving"
+                              Disabled="@_saving" />
+            </RadzenStack>
+        </RadzenTemplateForm>
+    </RadzenCard>
+</div>
+
+@code {
+    private CreateConfigurationModel _model = new();
+    private List<EnvironmentDto> _environments = new();
+    private List<ConfigurationGroupDto> _groups = new();
+    private bool _saving = false;
+    private bool _boolValue = false;
+    private Guid? _selectedEnvironmentId;
+    private Guid? _selectedGroupId;
+
+    // Dropdown data
+    private List<ValueTypeOption> _valueTypes = new()
+    {
+        new("String", ConfigurationValueType.String),
+        new("Integer", ConfigurationValueType.Integer),
+        new("Boolean", ConfigurationValueType.Boolean),
+        new("Decimal", ConfigurationValueType.Decimal),
+        new("DateTime", ConfigurationValueType.DateTime),
+        new("Json", ConfigurationValueType.Json)
+    };
+
+    private List<BoolOption> _boolOptions = new()
+    {
+        new("True", true),
+        new("False", false)
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            // TODO: Implement actual API calls
+            // var envTask = EnvironmentClient.GetActiveAsync();
+            // var groupTask = GroupClient.GetAllAsync();
+            // await Task.WhenAll(envTask, groupTask);
+            // _environments = (await envTask).ToList();
+            // _groups = (await groupTask).ToList();
+
+            LoadSampleData();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Warning", "Database unavailable, using sample data");
+            LoadSampleData();
+        }
+    }
+
+    private void LoadSampleData()
+    {
+        // Sample environments
+        _environments = new List<EnvironmentDto>
+        {
+            new(Guid.NewGuid(), "Development", "Development environment", true, 1, DateTime.UtcNow, null, "system", null, 0),
+            new(Guid.NewGuid(), "Staging", "Staging environment", true, 2, DateTime.UtcNow, null, "system", null, 0),
+            new(Guid.NewGuid(), "Production", "Production environment", true, 3, DateTime.UtcNow, null, "system", null, 0)
+        };
+
+        // Sample groups
+        _groups = new List<ConfigurationGroupDto>
+        {
+            new(Guid.NewGuid(), "Database", "Database configuration settings", null, null, true, 1, DateTime.UtcNow, null, "system", null, 0, 0),
+            new(Guid.NewGuid(), "API", "API configuration settings", null, null, true, 2, DateTime.UtcNow, null, "system", null, 0, 0),
+            new(Guid.NewGuid(), "UI", "User interface settings", null, null, true, 3, DateTime.UtcNow, null, "system", null, 0, 0)
+        };
+
+        StateHasChanged();
+    }
+
+    private void OnEnvironmentChanged(object value)
+    {
+        _selectedEnvironmentId = value as Guid?;
+        _model.EnvironmentId = _selectedEnvironmentId ?? Guid.Empty;
+    }
+
+    private void OnGroupChanged(object value)
+    {
+        _selectedGroupId = value as Guid?;
+        _model.GroupId = _selectedGroupId;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        _saving = true;
+        try
+        {
+            // Validate required fields
+            if (_model.EnvironmentId == Guid.Empty)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Validation Error", "Please select an environment");
+                return;
+            }
+
+            // Handle boolean value conversion
+            if (_model.ValueType == ConfigurationValueType.Boolean)
+            {
+                _model.Value = _boolValue.ToString().ToLower();
+            }
+
+            // TODO: Implement actual API call
+            NotificationService.Notify(NotificationSeverity.Success, "Success", $"Configuration '{_model.Key}' would be created here");
+            Navigation.NavigateTo("/configurations");
+
+            /*
+            var createDto = new CreateConfigurationDto(
+                _model.Key,
+                _model.Value,
+                _model.ValueType,
+                _model.Description,
+                _model.EnvironmentId,
+                _model.GroupId,
+                _model.IsEncrypted,
+                _model.IsRequired,
+                _model.DefaultValue
+            );
+
+            var result = await ConfigurationClient.CreateAsync(createDto);
+            NotificationService.Notify(NotificationSeverity.Success, "Success", $"Configuration '{result.Key}' created successfully");
+            Navigation.NavigateTo("/configurations");
+            */
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error creating configuration: {ex.Message}");
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    public class CreateConfigurationModel
+    {
+        public string Key { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+        public ConfigurationValueType ValueType { get; set; } = ConfigurationValueType.String;
+        public string Description { get; set; } = string.Empty;
+        public Guid EnvironmentId { get; set; }
+        public Guid? GroupId { get; set; }
+        public bool IsEncrypted { get; set; }
+        public bool IsRequired { get; set; }
+        public string? DefaultValue { get; set; }
+    }
+
+    public record ValueTypeOption(string Text, ConfigurationValueType Value);
+    public record BoolOption(string Text, bool Value);
+}

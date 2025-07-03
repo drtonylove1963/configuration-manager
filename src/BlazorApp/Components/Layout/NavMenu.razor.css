@@ -1,0 +1,112 @@
+/* Navigation Header Styling */
+.nav-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+}
+
+.custom-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.blue-accent {
+    color: #1e40af !important;
+    font-weight: 600;
+}
+
+/* Navigation Menu Styling */
+.nav-menu-custom {
+    padding: 0 1rem;
+}
+
+/* Navigation Link Styling */
+.nav-link-primary {
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.nav-link-primary:hover {
+    background-color: rgba(30, 64, 175, 0.1) !important;
+    transform: translateX(4px);
+}
+
+.nav-link-secondary {
+    margin-bottom: 0.25rem;
+    margin-left: 1rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.nav-link-secondary:hover {
+    background-color: rgba(30, 64, 175, 0.08) !important;
+    transform: translateX(2px);
+}
+
+/* Navigation Group Styling */
+.nav-group-primary {
+    margin-bottom: 0.5rem;
+}
+
+/* Active link styling */
+::deep .mud-nav-link.active {
+    background-color: #1e40af !important;
+    color: white !important;
+    font-weight: 600;
+}
+
+::deep .mud-nav-link.active .mud-icon-root {
+    color: white !important;
+}
+
+/* Navigation group header styling */
+::deep .mud-nav-group .mud-nav-group-header {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+::deep .mud-nav-group .mud-nav-group-header:hover {
+    background-color: rgba(30, 64, 175, 0.05) !important;
+}
+
+/* Navigation group content styling */
+::deep .mud-nav-group .mud-nav-group-content {
+    padding-left: 0;
+}
+
+/* Icon styling */
+::deep .mud-nav-link .mud-icon-root {
+    margin-right: 0.75rem;
+    transition: color 0.2s ease;
+}
+
+/* Divider styling */
+::deep .mud-divider {
+    margin: 1rem 0;
+    opacity: 0.3;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .nav-menu-custom {
+        padding: 0 0.5rem;
+    }
+
+    .nav-link-secondary {
+        margin-left: 0.5rem;
+    }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+    .nav-header {
+        border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .blue-accent {
+        color: #60a5fa !important;
+    }
+}

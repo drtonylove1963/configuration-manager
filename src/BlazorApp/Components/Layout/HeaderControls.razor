@@ -1,0 +1,108 @@
+@rendermode InteractiveServer
+@inject ICurrentUserService CurrentUserService
+@inject NotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@inject IThemeService ThemeService
+@using BlazorApp.Services
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" class="rz-p-4">
+    <RadzenButton Click="@DrawerToggle"
+                  Variant="Variant.Text"
+                  ButtonStyle="ButtonStyle.Light"
+                  Icon="menu"
+                  title="Toggle Sidebar" />
+
+    <RadzenText TextStyle="TextStyle.H6" class="rz-color-white">Configuration Manager</RadzenText>
+
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-ml-auto">
+        <!-- Theme Toggle -->
+        <RadzenButton Click="@ToggleTheme"
+                     Variant="Variant.Text"
+                     ButtonStyle="ButtonStyle.Light"
+                     Icon="@(ThemeService.CurrentTheme == "dark" ? "light_mode" : "dark_mode")"
+                     title="@(ThemeService.CurrentTheme == "dark" ? "Switch to Light Mode" : "Switch to Dark Mode")" />
+
+        <!-- User Profile -->
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+            <RadzenText Text="@_currentUser.DisplayName" class="rz-color-white" />
+            <RadzenButton Click="@ShowUserMenu"
+                         Variant="Variant.Text"
+                         ButtonStyle="ButtonStyle.Light"
+                         Icon="person" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenStack>
+
+@implements IDisposable
+
+@code {
+    private CurrentUser _currentUser = new();
+
+    protected override void OnInitialized()
+    {
+        // Initialize current user
+        _currentUser = CurrentUserService.GetCurrentUser();
+
+        // Subscribe to theme changes
+        ThemeService.ThemeChanged += OnThemeChanged;
+    }
+
+    private void OnThemeChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ThemeService.ThemeChanged -= OnThemeChanged;
+    }
+
+    // Theme initialization is handled by MainLayout
+
+    private async Task DrawerToggle()
+    {
+        Console.WriteLine("HeaderControls: DrawerToggle called");
+
+        // Use JavaScript to toggle the sidebar directly
+        await JSRuntime.InvokeVoidAsync("eval", @"
+            const sidebar = document.querySelector('.rz-sidebar');
+            if (sidebar) {
+                const isExpanded = sidebar.style.display !== 'none';
+                sidebar.style.display = isExpanded ? 'none' : 'block';
+                console.log('Sidebar toggled:', !isExpanded);
+            }
+        ");
+
+        StateHasChanged();
+    }
+
+    private async Task ToggleTheme()
+    {
+        Console.WriteLine($"HeaderControls: ToggleTheme called. Current theme: {ThemeService.CurrentTheme}");
+
+        try
+        {
+            // Simple toggle using the new service
+            await ThemeService.ToggleThemeAsync();
+            Console.WriteLine($"HeaderControls: Theme toggled to: {ThemeService.CurrentTheme}");
+
+            // Force UI update
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"HeaderControls: Error in ToggleTheme: {ex.Message}");
+
+            // Fallback to direct JavaScript
+            await JSRuntime.InvokeVoidAsync("toggleTheme");
+        }
+    }
+
+    private void ShowUserMenu()
+    {
+        Console.WriteLine("HeaderControls: ShowUserMenu called");
+        // TODO: Implement user menu functionality
+        NotificationService.Notify(NotificationSeverity.Info, "User Menu", "User menu functionality coming soon!");
+        StateHasChanged();
+    }
+}

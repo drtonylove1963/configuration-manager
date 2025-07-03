@@ -1,0 +1,117 @@
+@page "/environments/create"
+@rendermode InteractiveServer
+@using Client.Services
+@using Application.DTOs.Environment
+@inject IEnvironmentApiClient EnvironmentClient
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Create Environment</PageTitle>
+
+<div class="rz-p-4">
+    <RadzenBreadCrumb class="rz-mb-4">
+        <RadzenBreadCrumbItem Path="/" Text="Dashboard" />
+        <RadzenBreadCrumbItem Path="/environments" Text="Environments" />
+        <RadzenBreadCrumbItem Text="Create" />
+    </RadzenBreadCrumb>
+
+    <RadzenText TextStyle="TextStyle.H4" class="rz-mb-4">Create New Environment</RadzenText>
+
+    <RadzenCard>
+        <RadzenTemplateForm Data="@_model" Submit="@HandleValidSubmit" TItem="CreateEnvironmentModel">
+            <RadzenRow Gap="2rem">
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenLabel Text="Environment Name" Style="font-weight: 500;" />
+                        <RadzenTextBox @bind-Value="_model.Name"
+                                       Placeholder="Enter environment name"
+                                       Style="width: 100%;" />
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                            e.g., Development, Staging, Production
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenLabel Text="Sort Order" Style="font-weight: 500;" />
+                        <RadzenNumeric @bind-Value="_model.SortOrder"
+                                       Min="0"
+                                       Style="width: 100%;" />
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                            Lower numbers appear first
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <RadzenColumn Size="12">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenLabel Text="Description" Style="font-weight: 500;" />
+                        <RadzenTextArea @bind-Value="_model.Description"
+                                        Rows="3"
+                                        Placeholder="Describe the purpose and characteristics of this environment"
+                                        Style="width: 100%;" />
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <hr class="rz-border-color-base-300 rz-my-6" />
+
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+                <RadzenButton Text="Cancel"
+                              ButtonStyle="ButtonStyle.Light"
+                              Click="@(() => Navigation.NavigateTo("/environments"))" />
+                <RadzenButton Text="@(_saving ? "Creating..." : "Create Environment")"
+                              ButtonStyle="ButtonStyle.Primary"
+                              ButtonType="ButtonType.Submit"
+                              IsBusy="@_saving"
+                              Disabled="@_saving" />
+            </RadzenStack>
+        </RadzenTemplateForm>
+    </RadzenCard>
+</div>
+
+@code {
+    private CreateEnvironmentModel _model = new();
+    private bool _saving = false;
+
+    private async Task HandleValidSubmit()
+    {
+        _saving = true;
+        try
+        {
+            // Check if environment name already exists
+            var exists = await EnvironmentClient.ExistsAsync(_model.Name);
+            if (exists)
+            {
+                NotificationService.Notify(NotificationSeverity.Warning, "Warning", $"Environment '{_model.Name}' already exists");
+                return;
+            }
+
+            var createDto = new CreateEnvironmentDto(
+                _model.Name,
+                _model.Description,
+                _model.SortOrder
+            );
+
+            var result = await EnvironmentClient.CreateAsync(createDto);
+            NotificationService.Notify(NotificationSeverity.Success, "Success", $"Environment '{result.Name}' created successfully");
+            Navigation.NavigateTo("/environments");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error creating environment: {ex.Message}");
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    public class CreateEnvironmentModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public int SortOrder { get; set; } = 0;
+    }
+}

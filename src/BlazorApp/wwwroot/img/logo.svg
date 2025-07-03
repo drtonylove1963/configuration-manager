@@ -1,0 +1,33 @@
+<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e40af;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e3a8a;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main icon -->
+  <rect x="2" y="2" width="36" height="36" rx="8" fill="url(#logoGradient)"/>
+  
+  <!-- Configuration gear icon -->
+  <g transform="translate(20, 20)">
+    <circle cx="0" cy="0" r="6" fill="white" opacity="0.9"/>
+    <circle cx="0" cy="0" r="3" fill="none" stroke="white" stroke-width="1.5"/>
+    <g stroke="white" stroke-width="1.5" opacity="0.8">
+      <line x1="0" y1="-8" x2="0" y2="-6"/>
+      <line x1="0" y1="6" x2="0" y2="8"/>
+      <line x1="8" y1="0" x2="6" y2="0"/>
+      <line x1="-6" y1="0" x2="-8" y2="0"/>
+      <line x1="5.66" y1="-5.66" x2="4.24" y2="-4.24"/>
+      <line x1="-4.24" y1="4.24" x2="-5.66" y2="5.66"/>
+      <line x1="5.66" y1="5.66" x2="4.24" y2="4.24"/>
+      <line x1="-4.24" y1="-4.24" x2="-5.66" y2="-5.66"/>
+    </g>
+  </g>
+  
+  <!-- Text -->
+  <text x="45" y="16" font-family="Roboto, sans-serif" font-size="12" font-weight="500" fill="#1e40af">Configuration</text>
+  <text x="45" y="28" font-family="Roboto, sans-serif" font-size="12" font-weight="400" fill="#374151">Manager</text>
+</svg>

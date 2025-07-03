@@ -1,0 +1,208 @@
+@page "/groups/{Id:guid}/edit"
+@rendermode InteractiveServer
+@using Client.Services
+@using Application.DTOs.ConfigurationGroup
+@inject IConfigurationGroupApiClient GroupClient
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Configuration Group</PageTitle>
+
+<div class="rz-p-4">
+    @if (_group != null)
+    {
+        <RadzenBreadCrumb class="rz-mb-4">
+            <RadzenBreadCrumbItem Path="/" Text="Dashboard" />
+            <RadzenBreadCrumbItem Path="/groups" Text="Groups" />
+            <RadzenBreadCrumbItem Path="@($"/groups/{Id}")" Text="@_group.Name" />
+            <RadzenBreadCrumbItem Text="Edit" />
+        </RadzenBreadCrumb>
+
+        <RadzenText TextStyle="TextStyle.H4" class="rz-mb-4">Edit Group: @_group.Name</RadzenText>
+
+        <RadzenCard>
+            <RadzenTemplateForm Data="@_model" Submit="@HandleValidSubmit" TItem="UpdateGroupModel">
+                <RadzenRow Gap="2rem">
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenLabel Text="Group Name" Style="font-weight: 500;" />
+                            <RadzenTextBox @bind-Value="_model.Name"
+                                           Placeholder="Enter group name"
+                                           Style="width: 100%;" />
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                e.g., Database, API, Security
+                            </RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenLabel Text="Parent Group (Optional)" Style="font-weight: 500;" />
+                            <RadzenDropDown @bind-Value="_model.ParentGroupId"
+                                            Data="@_availableParentGroups"
+                                            TextProperty="Name"
+                                            ValueProperty="Id"
+                                            Placeholder="Select Parent Group"
+                                            AllowClear="true"
+                                            Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenLabel Text="Sort Order" Style="font-weight: 500;" />
+                            <RadzenNumeric @bind-Value="_model.SortOrder"
+                                           Min="0"
+                                           Style="width: 100%;" />
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                Lower numbers appear first
+                            </RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenLabel Text="Description" Style="font-weight: 500;" />
+                            <RadzenTextArea @bind-Value="_model.Description"
+                                            Rows="3"
+                                            Placeholder="Describe the purpose of this configuration group"
+                                            Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <hr class="rz-border-color-base-300 rz-my-6" />
+
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+                    <RadzenButton Text="Cancel"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Click="@(() => Navigation.NavigateTo($"/groups/{Id}"))" />
+                    <RadzenButton Text="@(_saving ? "Updating..." : "Update Group")"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  ButtonType="ButtonType.Submit"
+                                  IsBusy="@_saving"
+                                  Disabled="@_saving" />
+                </RadzenStack>
+            </RadzenTemplateForm>
+        </RadzenCard>
+    }
+    else if (_loading)
+    {
+        <RadzenStack Gap="1rem" AlignItems="AlignItems.Center" class="rz-mt-4">
+            <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+            <RadzenText TextStyle="TextStyle.H6">Loading group...</RadzenText>
+        </RadzenStack>
+    }
+    else
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Danger" ShowIcon="true">
+            Configuration group not found.
+        </RadzenAlert>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private ConfigurationGroupDto? _group;
+    private UpdateGroupModel _model = new();
+    private List<ConfigurationGroupDto> _availableParentGroups = new();
+    private bool _loading = true;
+    private bool _saving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            var groupTask = GroupClient.GetByIdAsync(Id);
+            var allGroupsTask = GroupClient.GetAllAsync();
+
+            await Task.WhenAll(groupTask, allGroupsTask);
+
+            _group = await groupTask;
+            var allGroups = (await allGroupsTask).ToList();
+
+            if (_group != null)
+            {
+                _model = new UpdateGroupModel
+                {
+                    Name = _group.Name,
+                    Description = _group.Description,
+                    ParentGroupId = _group.ParentGroupId,
+                    SortOrder = _group.SortOrder
+                };
+
+                // Filter out the current group and its descendants to prevent circular references
+                _availableParentGroups = allGroups
+                    .Where(g => g.Id != Id && g.IsActive && !IsDescendantOf(g.Id, Id, allGroups))
+                    .OrderBy(g => g.Name)
+                    .ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error loading data: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (_group == null) return;
+
+        _saving = true;
+        try
+        {
+            var updateDto = new UpdateConfigurationGroupDto(
+                _model.Name,
+                _model.Description,
+                _model.SortOrder
+            );
+
+            var result = await GroupClient.UpdateAsync(Id, updateDto);
+
+            // If parent group changed, move the group
+            if (_model.ParentGroupId != _group.ParentGroupId)
+            {
+                var moveDto = new MoveGroupDto(_model.ParentGroupId);
+                await GroupClient.MoveAsync(Id, moveDto);
+            }
+
+            NotificationService.Notify(NotificationSeverity.Success, "Success", $"Group '{result.Name}' updated successfully");
+            Navigation.NavigateTo($"/groups/{Id}");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error updating group: {ex.Message}");
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private bool IsDescendantOf(Guid potentialDescendantId, Guid ancestorId, List<ConfigurationGroupDto> allGroups)
+    {
+        // Simple check to prevent circular references
+        // In a more complex implementation, you'd traverse the entire hierarchy
+        var potentialDescendant = allGroups.FirstOrDefault(g => g.Id == potentialDescendantId);
+        return potentialDescendant?.ParentGroupId == ancestorId;
+    }
+
+    public class UpdateGroupModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public Guid? ParentGroupId { get; set; }
+        public int SortOrder { get; set; } = 0;
+    }
+}

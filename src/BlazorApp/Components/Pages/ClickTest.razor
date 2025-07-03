@@ -1,0 +1,79 @@
+@page "/click-test"
+@rendermode InteractiveServer
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Click Test</PageTitle>
+
+<div class="rz-p-4">
+    <RadzenText TextStyle="TextStyle.H4" class="rz-mb-4">Click Event Test</RadzenText>
+    
+    <RadzenStack Gap="1rem">
+        <RadzenText TextStyle="TextStyle.Body1">Test different types of click events:</RadzenText>
+        
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Wrap="FlexWrap.Wrap">
+            <RadzenButton Text="Test Notification" 
+                          ButtonStyle="ButtonStyle.Primary" 
+                          Icon="notifications"
+                          Click="@TestNotification" />
+                          
+            <RadzenButton Text="Test Lambda" 
+                          ButtonStyle="ButtonStyle.Secondary" 
+                          Icon="code"
+                          Click="@(() => TestLambda())" />
+                          
+            <RadzenButton Text="Test Navigation" 
+                          ButtonStyle="ButtonStyle.Success" 
+                          Icon="navigation"
+                          Click="@TestNavigation" />
+                          
+            <RadzenButton Text="Test Counter" 
+                          ButtonStyle="ButtonStyle.Info" 
+                          Icon="add"
+                          Click="@IncrementCounter" />
+        </RadzenStack>
+        
+        <RadzenCard class="rz-mt-4">
+            <RadzenStack Gap="1rem">
+                <RadzenText TextStyle="TextStyle.H6">Test Results:</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1">Counter: @_counter</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1">Last Action: @_lastAction</RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenStack>
+</div>
+
+@code {
+    private int _counter = 0;
+    private string _lastAction = "None";
+
+    private void TestNotification()
+    {
+        _lastAction = "Notification clicked";
+        NotificationService.Notify(NotificationSeverity.Success, "Success", "Notification button clicked!");
+        StateHasChanged();
+    }
+
+    private void TestLambda()
+    {
+        _lastAction = "Lambda clicked";
+        NotificationService.Notify(NotificationSeverity.Info, "Info", "Lambda button clicked!");
+        StateHasChanged();
+    }
+
+    private void TestNavigation()
+    {
+        _lastAction = "Navigation clicked";
+        NotificationService.Notify(NotificationSeverity.Warning, "Navigation", "Navigation button clicked!");
+        // Navigation.NavigateTo("/");
+        StateHasChanged();
+    }
+
+    private void IncrementCounter()
+    {
+        _counter++;
+        _lastAction = $"Counter incremented to {_counter}";
+        NotificationService.Notify(NotificationSeverity.Success, "Counter", $"Counter is now {_counter}");
+        StateHasChanged();
+    }
+}

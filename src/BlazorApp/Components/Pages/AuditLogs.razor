@@ -1,0 +1,300 @@
+@page "/audit"
+@rendermode InteractiveServer
+@using Client.Services
+@using Infrastructure.MongoDB.Models
+@* @inject IAuditApiClient AuditClient *@
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Audit Logs</PageTitle>
+
+<div class="rz-p-4">
+    <RadzenText TextStyle="TextStyle.H4" class="rz-mb-4">Audit Logs</RadzenText>
+
+    <RadzenCard class="rz-mb-4">
+        <RadzenStack Gap="1rem">
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenTextBox @bind-Value="_entityTypeFilter"
+                                   Placeholder="Entity Type"
+                                   @onkeyup="@OnFilterKeyUp"
+                                   Style="width: 100%;" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenTextBox @bind-Value="_userFilter"
+                                   Placeholder="User"
+                                   @onkeyup="@OnFilterKeyUp"
+                                   Style="width: 100%;" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenTextBox @bind-Value="_actionFilter"
+                                   Placeholder="Action"
+                                   @onkeyup="@OnFilterKeyUp"
+                                   Style="width: 100%;" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenNumeric @bind-Value="_limitFilter"
+                                   Placeholder="Limit"
+                                   Min="10"
+                                   Max="1000"
+                                   Step="10"
+                                   Style="width: 100%;" />
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+                <RadzenButton Text="Apply Filters"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Icon="search"
+                              Click="@LoadAuditLogs" />
+                <RadzenButton Text="Clear"
+                              ButtonStyle="ButtonStyle.Light"
+                              Icon="clear"
+                              Click="@ClearFilters" />
+            </RadzenStack>
+        </RadzenStack>
+    </RadzenCard>
+
+    <RadzenDataGrid @ref="_dataGrid"
+                    Data="@_auditLogs"
+                    IsLoading="@_loading"
+                    AllowFiltering="false"
+                    AllowSorting="true"
+                    TItem="AuditLog"
+                    Density="Density.Compact">
+        <Columns>
+            <RadzenDataGridColumn TItem="AuditLog" Property="Timestamp" Title="Timestamp" FormatString="{0:yyyy-MM-dd HH:mm:ss}" />
+            <RadzenDataGridColumn TItem="AuditLog" Property="EntityType" Title="Entity Type" />
+            <RadzenDataGridColumn TItem="AuditLog" Title="Entity ID" Sortable="false">
+                <Template Context="audit">
+                    <RadzenText TextStyle="TextStyle.Body2" Style="font-family: monospace;">
+                        @(audit.EntityId.ToString()[..8])...
+                    </RadzenText>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="AuditLog" Property="Action" Title="Action" />
+            <RadzenDataGridColumn TItem="AuditLog" Property="UserName" Title="User" />
+            <RadzenDataGridColumn TItem="AuditLog" Title="Changes" Sortable="false">
+                <Template Context="audit">
+                    @if (audit.Changes.Any())
+                    {
+                        <RadzenButton ButtonStyle="ButtonStyle.Light"
+                                      Size="ButtonSize.Small"
+                                      Icon="visibility"
+                                      Text="View Changes"
+                                      Click="@(() => ShowChanges(audit))" />
+                    }
+                    else
+                    {
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">No changes</RadzenText>
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="AuditLog" Title="IP Address" Sortable="false">
+                <Template Context="audit">
+                    @if (!string.IsNullOrEmpty(audit.IpAddress))
+                    {
+                        <RadzenText TextStyle="TextStyle.Body2" Style="font-family: monospace;">@audit.IpAddress</RadzenText>
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</div>
+
+@if (_showChangesDialog && _selectedAuditLog != null)
+{
+    <RadzenSidebar @bind-Expanded="_showChangesDialog" Style="width: 600px;">
+        <RadzenStack Gap="1rem" class="rz-p-4">
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                    <RadzenIcon Icon="history" />
+                    <RadzenText TextStyle="TextStyle.H6">Audit Log Details</RadzenText>
+                </RadzenStack>
+                <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="close" Size="ButtonSize.Small" Click="@(() => _showChangesDialog = false)" />
+            </RadzenStack>
+
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="6">
+                    <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Entity Type</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1">@_selectedAuditLog.EntityType</RadzenText>
+                </RadzenColumn>
+                <RadzenColumn Size="6">
+                    <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Action</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1">@_selectedAuditLog.Action</RadzenText>
+                </RadzenColumn>
+                <RadzenColumn Size="6">
+                    <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">User</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1">@_selectedAuditLog.UserName (@_selectedAuditLog.UserId)</RadzenText>
+                </RadzenColumn>
+                <RadzenColumn Size="6">
+                    <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Timestamp</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1">@_selectedAuditLog.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</RadzenText>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <hr style="border: 1px solid var(--rz-base-300); margin: 1rem 0;" />
+
+            <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Entity ID</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" Style="font-family: monospace; word-break: break-all;">@_selectedAuditLog.EntityId</RadzenText>
+
+            @if (_selectedAuditLog.Changes.Any())
+            {
+                <hr style="border: 1px solid var(--rz-base-300); margin: 1rem 0;" />
+
+                <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Changes</RadzenText>
+                <RadzenCard Style="background-color: var(--rz-base-200);">
+                    <RadzenStack Gap="0.5rem">
+                        @foreach (var change in _selectedAuditLog.Changes)
+                        {
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" class="rz-mb-2">
+                                <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 500;">@change.Key:</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body2" Style="word-break: break-all;">@change.Value?.ToString()</RadzenText>
+                            </RadzenStack>
+                        }
+                    </RadzenStack>
+                </RadzenCard>
+            }
+
+            @if (_selectedAuditLog.Metadata.Any())
+            {
+                <hr style="border: 1px solid var(--rz-base-300); margin: 1rem 0;" />
+
+                <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Metadata</RadzenText>
+                <RadzenCard Style="background-color: var(--rz-info-lighter);">
+                    <RadzenStack Gap="0.5rem">
+                        @foreach (var meta in _selectedAuditLog.Metadata)
+                        {
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" class="rz-mb-2">
+                                <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 500;">@meta.Key:</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body2" Style="word-break: break-all;">@meta.Value?.ToString()</RadzenText>
+                            </RadzenStack>
+                        }
+                    </RadzenStack>
+                </RadzenCard>
+            }
+
+            @if (!string.IsNullOrEmpty(_selectedAuditLog.IpAddress))
+            {
+                <hr style="border: 1px solid var(--rz-base-300); margin: 1rem 0;" />
+
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                    <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">IP Address</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2" Style="font-family: monospace;">@_selectedAuditLog.IpAddress</RadzenText>
+                </RadzenStack>
+            }
+
+            @if (!string.IsNullOrEmpty(_selectedAuditLog.UserAgent))
+            {
+                <hr style="border: 1px solid var(--rz-base-300); margin: 1rem 0;" />
+
+                <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">User Agent</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body2" Style="word-break: break-all;">@_selectedAuditLog.UserAgent</RadzenText>
+            }
+        </RadzenStack>
+    </RadzenSidebar>
+}
+
+@code {
+    private RadzenDataGrid<AuditLog>? _dataGrid;
+    private List<AuditLog> _auditLogs = new();
+    private bool _loading = true;
+
+    // Filters
+    private string _entityTypeFilter = string.Empty;
+    private string _userFilter = string.Empty;
+    private string _actionFilter = string.Empty;
+    private int _limitFilter = 100;
+
+    // Dialog
+    private bool _showChangesDialog = false;
+    private AuditLog? _selectedAuditLog;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAuditLogs();
+    }
+
+    private async Task LoadAuditLogs()
+    {
+        _loading = true;
+        try
+        {
+            // TODO: Implement actual API call
+            // _auditLogs = (await AuditClient.GetAllAsync(_limitFilter)).ToList();
+
+            // Mock data for demonstration
+            _auditLogs = GenerateMockAuditLogs();
+
+            // Apply client-side filtering
+            if (!string.IsNullOrWhiteSpace(_entityTypeFilter))
+            {
+                _auditLogs = _auditLogs.Where(a => a.EntityType.Contains(_entityTypeFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(_userFilter))
+            {
+                _auditLogs = _auditLogs.Where(a => a.UserName.Contains(_userFilter, StringComparison.OrdinalIgnoreCase) ||
+                                                   a.UserId.Contains(_userFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(_actionFilter))
+            {
+                _auditLogs = _auditLogs.Where(a => a.Action.Contains(_actionFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error loading audit logs: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OnFilterKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await LoadAuditLogs();
+        }
+    }
+
+    private async Task ClearFilters()
+    {
+        _entityTypeFilter = string.Empty;
+        _userFilter = string.Empty;
+        _actionFilter = string.Empty;
+        _limitFilter = 100;
+        await LoadAuditLogs();
+    }
+
+    private void ShowChanges(AuditLog auditLog)
+    {
+        _selectedAuditLog = auditLog;
+        _showChangesDialog = true;
+    }
+
+    private List<AuditLog> GenerateMockAuditLogs()
+    {
+        // Mock data for demonstration
+        return new List<AuditLog>
+        {
+            new AuditLog
+            {
+                Id = Guid.NewGuid().ToString(),
+                EntityId = Guid.NewGuid(),
+                EntityType = "Configuration",
+                Action = "Create",
+                UserName = "admin",
+                UserId = "admin@example.com",
+                Timestamp = DateTime.UtcNow.AddMinutes(-30),
+                IpAddress = "192.168.1.100",
+                UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                Changes = new Dictionary<string, object> { { "Key", "DatabaseConnection" }, { "Value", "Server=localhost;..." } },
+                Metadata = new Dictionary<string, object> { { "Source", "Web UI" } }
+            }
+        };
+    }
+}

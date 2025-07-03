@@ -1,0 +1,175 @@
+@page "/environments/{Id:guid}/edit"
+@rendermode InteractiveServer
+@using Client.Services
+@using Application.DTOs.Environment
+@inject IEnvironmentApiClient EnvironmentClient
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Environment</PageTitle>
+
+<div class="rz-p-4">
+    @if (_environment != null)
+    {
+        <RadzenBreadCrumb class="rz-mb-4">
+            <RadzenBreadCrumbItem Path="/" Text="Dashboard" />
+            <RadzenBreadCrumbItem Path="/environments" Text="Environments" />
+            <RadzenBreadCrumbItem Path="@($"/environments/{Id}")" Text="@_environment.Name" />
+            <RadzenBreadCrumbItem Text="Edit" />
+        </RadzenBreadCrumb>
+
+        <RadzenText TextStyle="TextStyle.H4" class="rz-mb-4">Edit Environment: @_environment.Name</RadzenText>
+
+        <RadzenCard>
+            <RadzenTemplateForm Data="@_model" Submit="@HandleValidSubmit" TItem="UpdateEnvironmentModel">
+                <RadzenRow Gap="2rem">
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenLabel Text="Environment Name" Style="font-weight: 500;" />
+                            <RadzenTextBox @bind-Value="_model.Name"
+                                           Placeholder="Enter environment name"
+                                           Style="width: 100%;" />
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                e.g., Development, Staging, Production
+                            </RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenLabel Text="Sort Order" Style="font-weight: 500;" />
+                            <RadzenNumeric @bind-Value="_model.SortOrder"
+                                           Min="0"
+                                           Style="width: 100%;" />
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                Lower numbers appear first
+                            </RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenLabel Text="Description" Style="font-weight: 500;" />
+                            <RadzenTextArea @bind-Value="_model.Description"
+                                            Rows="3"
+                                            Placeholder="Describe the purpose and characteristics of this environment"
+                                            Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <hr class="rz-border-color-base-300 rz-my-6" />
+
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+                    <RadzenButton Text="Cancel"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Click="@(() => Navigation.NavigateTo($"/environments/{Id}"))" />
+                    <RadzenButton Text="@(_saving ? "Updating..." : "Update Environment")"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  ButtonType="ButtonType.Submit"
+                                  IsBusy="@_saving"
+                                  Disabled="@_saving" />
+                </RadzenStack>
+            </RadzenTemplateForm>
+        </RadzenCard>
+    }
+    else if (_loading)
+    {
+        <RadzenStack Gap="1rem" AlignItems="AlignItems.Center" class="rz-mt-4">
+            <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+            <RadzenText TextStyle="TextStyle.H6">Loading environment...</RadzenText>
+        </RadzenStack>
+    }
+    else
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Danger" ShowIcon="true">
+            Environment not found.
+        </RadzenAlert>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private EnvironmentDto? _environment;
+    private UpdateEnvironmentModel _model = new();
+    private bool _loading = true;
+    private bool _saving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEnvironment();
+    }
+
+    private async Task LoadEnvironment()
+    {
+        _loading = true;
+        try
+        {
+            _environment = await EnvironmentClient.GetByIdAsync(Id);
+
+            if (_environment != null)
+            {
+                _model = new UpdateEnvironmentModel
+                {
+                    Name = _environment.Name,
+                    Description = _environment.Description,
+                    SortOrder = _environment.SortOrder
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error loading environment: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (_environment == null) return;
+
+        _saving = true;
+        try
+        {
+            // Check if the new name already exists (if changed)
+            if (_model.Name != _environment.Name)
+            {
+                var exists = await EnvironmentClient.ExistsAsync(_model.Name);
+                if (exists)
+                {
+                    NotificationService.Notify(NotificationSeverity.Warning, "Warning", $"Environment '{_model.Name}' already exists");
+                    return;
+                }
+            }
+
+            var updateDto = new UpdateEnvironmentDto(
+                _model.Name,
+                _model.Description,
+                _model.SortOrder
+            );
+
+            var result = await EnvironmentClient.UpdateAsync(Id, updateDto);
+            NotificationService.Notify(NotificationSeverity.Success, "Success", $"Environment '{result.Name}' updated successfully");
+            Navigation.NavigateTo($"/environments/{Id}");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error updating environment: {ex.Message}");
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    public class UpdateEnvironmentModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public int SortOrder { get; set; } = 0;
+    }
+}

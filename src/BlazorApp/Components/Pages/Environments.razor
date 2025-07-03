@@ -1,0 +1,165 @@
+@page "/environments"
+@rendermode InteractiveServer
+@using Client.Services
+@using Application.DTOs.Environment
+@inject IEnvironmentApiClient EnvironmentClient
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Environments</PageTitle>
+
+<div class="rz-p-4">
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" class="rz-mb-4">
+        <RadzenText TextStyle="TextStyle.H4">Environment Management</RadzenText>
+        <RadzenButton Text="Create Environment"
+                      ButtonStyle="ButtonStyle.Primary"
+                      Icon="add"
+                      Click="@(() => Navigation.NavigateTo("/environments/create"))" />
+    </RadzenStack>
+
+    <RadzenDataGrid @ref="_dataGrid"
+                    Data="@_environments"
+                    IsLoading="@_loading"
+                    AllowFiltering="true"
+                    AllowSorting="true"
+                    TItem="EnvironmentDto"
+                    RowSelect="@OnRowClick">
+        <Columns>
+            <RadzenDataGridColumn TItem="EnvironmentDto" Property="Name" Title="Name" />
+            <RadzenDataGridColumn TItem="EnvironmentDto" Property="Description" Title="Description" />
+            <RadzenDataGridColumn TItem="EnvironmentDto" Property="SortOrder" Title="Sort Order" />
+            <RadzenDataGridColumn TItem="EnvironmentDto" Property="ConfigurationCount" Title="Configurations" />
+            <RadzenDataGridColumn TItem="EnvironmentDto" Title="Status" Sortable="false">
+                <Template Context="env">
+                    <RadzenBadge BadgeStyle="@(env.IsActive ? BadgeStyle.Success : BadgeStyle.Secondary)"
+                                 Text="@(env.IsActive ? "Active" : "Inactive")" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="EnvironmentDto" Property="CreatedAt" Title="Created" FormatString="{0:yyyy-MM-dd HH:mm}" />
+            <RadzenDataGridColumn TItem="EnvironmentDto" Title="Actions" Sortable="false">
+                <Template Context="env">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                        <RadzenButton ButtonStyle="ButtonStyle.Light"
+                                      Icon="edit"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => EditEnvironment(env.Id))" />
+                        @if (env.IsActive)
+                        {
+                            <RadzenButton ButtonStyle="ButtonStyle.Warning"
+                                          Icon="pause"
+                                          Size="ButtonSize.Small"
+                                          Click="@(() => DeactivateEnvironment(env))" />
+                        }
+                        else
+                        {
+                            <RadzenButton ButtonStyle="ButtonStyle.Success"
+                                          Icon="play_arrow"
+                                          Size="ButtonSize.Small"
+                                          Click="@(() => ActivateEnvironment(env))" />
+                        }
+                        <RadzenButton ButtonStyle="ButtonStyle.Danger"
+                                      Icon="delete"
+                                      Size="ButtonSize.Small"
+                                      Disabled="@(env.ConfigurationCount > 0)"
+                                      Click="@(() => DeleteEnvironment(env))" />
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</div>
+
+@code {
+    private RadzenDataGrid<EnvironmentDto>? _dataGrid;
+    private List<EnvironmentDto> _environments = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            _environments = (await EnvironmentClient.GetAllAsync()).OrderBy(e => e.SortOrder).ThenBy(e => e.Name).ToList();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error loading environments: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void OnRowClick(EnvironmentDto environment)
+    {
+        Navigation.NavigateTo($"/environments/{environment.Id}");
+    }
+
+    private void EditEnvironment(Guid id)
+    {
+        Navigation.NavigateTo($"/environments/{id}/edit");
+    }
+
+    private async Task ActivateEnvironment(EnvironmentDto environment)
+    {
+        try
+        {
+            await EnvironmentClient.ActivateAsync(environment.Id);
+            NotificationService.Notify(NotificationSeverity.Success, "Success", $"Environment '{environment.Name}' activated successfully");
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error activating environment: {ex.Message}");
+        }
+    }
+
+    private async Task DeactivateEnvironment(EnvironmentDto environment)
+    {
+        try
+        {
+            // TODO: Implement confirmation dialog
+            NotificationService.Notify(NotificationSeverity.Warning, "Deactivate Environment",
+                $"Deactivate functionality for '{environment.Name}' would be implemented here");
+
+            // await EnvironmentClient.DeactivateAsync(environment.Id);
+            // NotificationService.Notify(NotificationSeverity.Success, "Success", $"Environment '{environment.Name}' deactivated successfully");
+            // await LoadData();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error deactivating environment: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteEnvironment(EnvironmentDto environment)
+    {
+        if (environment.ConfigurationCount > 0)
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Cannot Delete",
+                $"Cannot delete environment '{environment.Name}' because it contains {environment.ConfigurationCount} configurations");
+            return;
+        }
+
+        try
+        {
+            // TODO: Implement confirmation dialog
+            NotificationService.Notify(NotificationSeverity.Warning, "Delete Environment",
+                $"Delete functionality for '{environment.Name}' would be implemented here");
+
+            // await EnvironmentClient.DeleteAsync(environment.Id);
+            // NotificationService.Notify(NotificationSeverity.Success, "Success", $"Environment '{environment.Name}' deleted successfully");
+            // await LoadData();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error deleting environment: {ex.Message}");
+        }
+    }
+}

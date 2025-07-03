@@ -1,0 +1,401 @@
+@page "/configurations"
+@rendermode InteractiveServer
+@using Client.Services
+@using Application.DTOs.Configuration
+@using Application.DTOs.Environment
+@using Application.DTOs.ConfigurationGroup
+@using Domain.ValueObjects
+@inject IConfigurationApiClient ConfigurationClient
+@inject IEnvironmentApiClient EnvironmentClient
+@inject IConfigurationGroupApiClient GroupClient
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Configurations</PageTitle>
+
+<div class="rz-p-4">
+    <RadzenText TextStyle="TextStyle.H4" class="rz-mb-4">Configuration Management</RadzenText>
+
+    <RadzenCard class="rz-mb-4">
+        <RadzenStack Gap="1rem">
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenTextBox @bind-Value="_searchTerm"
+                                   Placeholder="Search configurations"
+                                   @onkeyup="@OnSearchKeyUp"
+                                   Style="width: 100%;">
+                        <RadzenIcon Icon="search" Slot="end" />
+                    </RadzenTextBox>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenDropDown @bind-Value="_selectedEnvironmentId"
+                                    Data="@_environments"
+                                    TextProperty="Name"
+                                    ValueProperty="Id"
+                                    Placeholder="Select Environment"
+                                    AllowClear="true"
+                                    Style="width: 100%;" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenDropDown @bind-Value="_selectedGroupId"
+                                    Data="@_groups"
+                                    TextProperty="Name"
+                                    ValueProperty="Id"
+                                    Placeholder="Select Group"
+                                    AllowClear="true"
+                                    Style="width: 100%;" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenButton Text="Create Configuration"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Icon="add"
+                                  Click="@(() => Navigation.NavigateTo("/configurations/create"))"
+                                  Style="width: 100%;" />
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenStack>
+    </RadzenCard>
+
+    <RadzenDataGrid @ref="_dataGrid"
+                    Data="@_configurations"
+                    IsLoading="@_loading"
+                    AllowFiltering="false"
+                    AllowSorting="true"
+                    TItem="ConfigurationDto"
+                    RowSelect="@OnRowClick">
+        <Columns>
+            <RadzenDataGridColumn TItem="ConfigurationDto" Property="Key" Title="Key" Sortable="true" />
+            <RadzenDataGridColumn TItem="ConfigurationDto" Property="EnvironmentName" Title="Environment" Sortable="true" />
+            <RadzenDataGridColumn TItem="ConfigurationDto" Title="Group" Sortable="true">
+                <Template Context="config">
+                    @(config.GroupName ?? "No Group")
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ConfigurationDto" Title="Type" Sortable="true">
+                <Template Context="config">
+                    @config.ValueType.ToString()
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ConfigurationDto" Title="Value" Sortable="false">
+                <Template Context="config">
+                    @if (config.IsEncrypted)
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="Encrypted" />
+                    }
+                    else
+                    {
+                        <span>@(config.Value.Length > 50 ? config.Value.Substring(0, 50) + "..." : config.Value)</span>
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ConfigurationDto" Title="Status" Sortable="false">
+                <Template Context="config">
+                    <RadzenBadge BadgeStyle="@(config.IsActive ? BadgeStyle.Success : BadgeStyle.Secondary)"
+                                 Text="@(config.IsActive ? "Active" : "Inactive")" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ConfigurationDto" Title="Required" Sortable="false">
+                <Template Context="config">
+                    @if (config.IsRequired)
+                    {
+                        <RadzenIcon Icon="star" Style="color: var(--rz-warning);" />
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ConfigurationDto" Title="Actions" Sortable="false">
+                <Template Context="config">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                        <RadzenButton ButtonStyle="ButtonStyle.Light"
+                                      Icon="edit"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => EditConfiguration(config.Id))" />
+                        <RadzenButton ButtonStyle="ButtonStyle.Light"
+                                      Icon="history"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => ViewHistory(config.Id))" />
+                        <RadzenButton ButtonStyle="ButtonStyle.Danger"
+                                      Icon="delete"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => DeleteConfiguration(config))" />
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</div>
+
+@code {
+    private RadzenDataGrid<ConfigurationDto>? _dataGrid;
+    private List<ConfigurationDto> _configurations = new();
+    private List<EnvironmentDto> _environments = new();
+    private List<ConfigurationGroupDto> _groups = new();
+    private bool _loading = true;
+    private string _searchTerm = string.Empty;
+    private Guid? _selectedEnvironmentId;
+    private Guid? _selectedGroupId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            // Mock data for demonstration
+            var devEnvId = Guid.NewGuid();
+            var stagingEnvId = Guid.NewGuid();
+            var prodEnvId = Guid.NewGuid();
+
+            _environments = new List<EnvironmentDto>
+            {
+                new(
+                    Id: devEnvId,
+                    Name: "Development",
+                    Description: "Development environment for testing new features",
+                    IsActive: true,
+                    SortOrder: 1,
+                    CreatedAt: DateTime.UtcNow.AddDays(-30),
+                    UpdatedAt: null,
+                    CreatedBy: "system",
+                    UpdatedBy: null,
+                    ConfigurationCount: 0
+                ),
+                new(
+                    Id: stagingEnvId,
+                    Name: "Staging",
+                    Description: "Staging environment for pre-production testing",
+                    IsActive: true,
+                    SortOrder: 2,
+                    CreatedAt: DateTime.UtcNow.AddDays(-25),
+                    UpdatedAt: null,
+                    CreatedBy: "system",
+                    UpdatedBy: null,
+                    ConfigurationCount: 0
+                ),
+                new(
+                    Id: prodEnvId,
+                    Name: "Production",
+                    Description: "Production environment for live applications",
+                    IsActive: true,
+                    SortOrder: 3,
+                    CreatedAt: DateTime.UtcNow.AddDays(-20),
+                    UpdatedAt: null,
+                    CreatedBy: "system",
+                    UpdatedBy: null,
+                    ConfigurationCount: 0
+                )
+            };
+
+            var dbGroupId = Guid.NewGuid();
+            var apiGroupId = Guid.NewGuid();
+            var uiGroupId = Guid.NewGuid();
+
+            _groups = new List<ConfigurationGroupDto>
+            {
+                new(
+                    Id: dbGroupId,
+                    Name: "Database",
+                    Description: "Database connection and configuration settings",
+                    ParentGroupId: null,
+                    ParentGroupName: null,
+                    IsActive: true,
+                    SortOrder: 1,
+                    CreatedAt: DateTime.UtcNow.AddDays(-15),
+                    UpdatedAt: null,
+                    CreatedBy: "system",
+                    UpdatedBy: null,
+                    ConfigurationCount: 0,
+                    ChildGroupCount: 0
+                ),
+                new(
+                    Id: apiGroupId,
+                    Name: "API",
+                    Description: "API configuration and timeout settings",
+                    ParentGroupId: null,
+                    ParentGroupName: null,
+                    IsActive: true,
+                    SortOrder: 2,
+                    CreatedAt: DateTime.UtcNow.AddDays(-10),
+                    UpdatedAt: null,
+                    CreatedBy: "system",
+                    UpdatedBy: null,
+                    ConfigurationCount: 0,
+                    ChildGroupCount: 0
+                ),
+                new(
+                    Id: uiGroupId,
+                    Name: "UI",
+                    Description: "User interface configuration settings",
+                    ParentGroupId: null,
+                    ParentGroupName: null,
+                    IsActive: true,
+                    SortOrder: 3,
+                    CreatedAt: DateTime.UtcNow.AddDays(-5),
+                    UpdatedAt: null,
+                    CreatedBy: "system",
+                    UpdatedBy: null,
+                    ConfigurationCount: 0,
+                    ChildGroupCount: 0
+                )
+            };
+
+            _configurations = new List<ConfigurationDto>
+            {
+                new(
+                    Id: Guid.NewGuid(),
+                    Key: "ConnectionString",
+                    Value: "Server=localhost;Database=Test;Integrated Security=true;",
+                    ValueType: ConfigurationValueType.String,
+                    Description: "Main database connection string",
+                    EnvironmentId: devEnvId,
+                    EnvironmentName: "Development",
+                    GroupId: dbGroupId,
+                    GroupName: "Database",
+                    IsEncrypted: false,
+                    IsRequired: true,
+                    DefaultValue: null,
+                    IsActive: true,
+                    Version: 1,
+                    CreatedAt: DateTime.UtcNow.AddDays(-7),
+                    UpdatedAt: null,
+                    CreatedBy: "system",
+                    UpdatedBy: null
+                ),
+                new(
+                    Id: Guid.NewGuid(),
+                    Key: "ApiTimeout",
+                    Value: "30",
+                    ValueType: ConfigurationValueType.Integer,
+                    Description: "API request timeout in seconds",
+                    EnvironmentId: prodEnvId,
+                    EnvironmentName: "Production",
+                    GroupId: apiGroupId,
+                    GroupName: "API",
+                    IsEncrypted: false,
+                    IsRequired: false,
+                    DefaultValue: "30",
+                    IsActive: true,
+                    Version: 1,
+                    CreatedAt: DateTime.UtcNow.AddDays(-3),
+                    UpdatedAt: null,
+                    CreatedBy: "system",
+                    UpdatedBy: null
+                ),
+                new(
+                    Id: Guid.NewGuid(),
+                    Key: "ThemeColor",
+                    Value: "blue",
+                    ValueType: ConfigurationValueType.String,
+                    Description: "Primary theme color for the application",
+                    EnvironmentId: stagingEnvId,
+                    EnvironmentName: "Staging",
+                    GroupId: uiGroupId,
+                    GroupName: "UI",
+                    IsEncrypted: false,
+                    IsRequired: false,
+                    DefaultValue: "blue",
+                    IsActive: true,
+                    Version: 1,
+                    CreatedAt: DateTime.UtcNow.AddDays(-1),
+                    UpdatedAt: null,
+                    CreatedBy: "system",
+                    UpdatedBy: null
+                )
+            };
+
+            await ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error loading data: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        try
+        {
+            // Simple mock filtering
+            var filtered = _configurations.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(_searchTerm))
+            {
+                filtered = filtered.Where(c => c.Key.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (_selectedEnvironmentId.HasValue)
+            {
+                var envName = _environments.FirstOrDefault(e => e.Id == _selectedEnvironmentId)?.Name;
+                if (!string.IsNullOrEmpty(envName))
+                {
+                    filtered = filtered.Where(c => c.EnvironmentName == envName);
+                }
+            }
+
+            if (_selectedGroupId.HasValue)
+            {
+                var groupName = _groups.FirstOrDefault(g => g.Id == _selectedGroupId)?.Name;
+                if (!string.IsNullOrEmpty(groupName))
+                {
+                    filtered = filtered.Where(c => c.GroupName == groupName);
+                }
+            }
+
+            _configurations = filtered.ToList();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error filtering configurations: {ex.Message}");
+        }
+    }
+
+    private async Task OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ApplyFilters();
+        }
+    }
+
+    private void OnRowClick(ConfigurationDto configuration)
+    {
+        Navigation.NavigateTo($"/configurations/{configuration.Id}");
+    }
+
+    private void EditConfiguration(Guid id)
+    {
+        Navigation.NavigateTo($"/configurations/{id}/edit");
+    }
+
+    private void ViewHistory(Guid id)
+    {
+        Navigation.NavigateTo($"/configurations/{id}/history");
+    }
+
+    private async Task DeleteConfiguration(ConfigurationDto configuration)
+    {
+        try
+        {
+            // For now, just show a confirmation notification since we don't have a dialog service set up
+            NotificationService.Notify(NotificationSeverity.Warning, "Delete Configuration",
+                $"Delete functionality for '{configuration.Key}' would be implemented here");
+
+            // TODO: Implement actual delete with confirmation dialog
+            // await ConfigurationClient.DeleteAsync(configuration.Id);
+            // NotificationService.Notify(NotificationSeverity.Success, "Success", $"Configuration '{configuration.Key}' deleted successfully");
+            // await LoadData();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error deleting configuration: {ex.Message}");
+        }
+    }
+}

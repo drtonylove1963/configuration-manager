@@ -1,0 +1,300 @@
+@page "/configurations/{Id:guid}/edit"
+@rendermode InteractiveServer
+@using Client.Services
+@using Application.DTOs.Configuration
+@using Application.DTOs.ConfigurationGroup
+@using Domain.ValueObjects
+@inject IConfigurationApiClient ConfigurationClient
+@inject IConfigurationGroupApiClient GroupClient
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Configuration</PageTitle>
+
+<div class="rz-p-4">
+    @if (_configuration != null)
+    {
+        <RadzenBreadCrumb class="rz-mb-4">
+            <RadzenBreadCrumbItem Path="/" Text="Dashboard" />
+            <RadzenBreadCrumbItem Path="/configurations" Text="Configurations" />
+            <RadzenBreadCrumbItem Path="@($"/configurations/{Id}")" Text="@_configuration.Key" />
+            <RadzenBreadCrumbItem Text="Edit" />
+        </RadzenBreadCrumb>
+
+        <RadzenText TextStyle="TextStyle.H4" class="rz-mb-4">Edit Configuration: @_configuration.Key</RadzenText>
+
+        <RadzenCard>
+            <RadzenTemplateForm Data="@_model" Submit="@HandleValidSubmit" TItem="UpdateConfigurationModel">
+                <RadzenRow Gap="2rem">
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenLabel Text="Configuration Key" Style="font-weight: 500;" />
+                            <RadzenTextBox Value="@_configuration.Key"
+                                           ReadOnly="true"
+                                           Style="width: 100%;" />
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                Key cannot be changed
+                            </RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenLabel Text="Value Type" Style="font-weight: 500;" />
+                            <RadzenDropDown @bind-Value="_model.ValueType"
+                                            Data="@_valueTypes"
+                                            TextProperty="Text"
+                                            ValueProperty="Value"
+                                            Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenLabel Text="Value" Style="font-weight: 500;" />
+                            @if (_model.ValueType == ConfigurationValueType.Boolean)
+                            {
+                                <RadzenRadioButtonList @bind-Value="_boolValue"
+                                                       Data="@_boolOptions"
+                                                       TextProperty="Text"
+                                                       ValueProperty="Value"
+                                                       Orientation="Orientation.Horizontal" />
+                            }
+                            else if (_model.ValueType == ConfigurationValueType.Json)
+                            {
+                                <RadzenTextArea @bind-Value="_model.Value"
+                                                Rows="5"
+                                                Placeholder="Enter valid JSON"
+                                                Style="width: 100%;" />
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                    Enter valid JSON
+                                </RadzenText>
+                            }
+                            else
+                            {
+                                <RadzenTextBox @bind-Value="_model.Value"
+                                               Placeholder="Enter value"
+                                               Style="width: 100%;" />
+                            }
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenLabel Text="Description" Style="font-weight: 500;" />
+                            <RadzenTextArea @bind-Value="_model.Description"
+                                            Rows="3"
+                                            Placeholder="Describe what this configuration is used for"
+                                            Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenLabel Text="Environment" Style="font-weight: 500;" />
+                            <RadzenTextBox Value="@_configuration.EnvironmentName"
+                                           ReadOnly="true"
+                                           Style="width: 100%;" />
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                Environment cannot be changed
+                            </RadzenText>
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenLabel Text="Group (Optional)" Style="font-weight: 500;" />
+                            <RadzenDropDown @bind-Value="_model.GroupId"
+                                            Data="@_groups"
+                                            TextProperty="Name"
+                                            ValueProperty="Id"
+                                            Placeholder="Select Group"
+                                            AllowClear="true"
+                                            Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenLabel Text="Default Value (Optional)" Style="font-weight: 500;" />
+                            <RadzenTextBox @bind-Value="_model.DefaultValue"
+                                           Placeholder="Enter default value"
+                                           Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Gap="0.5rem" AlignItems="AlignItems.Center" Orientation="Orientation.Horizontal">
+                            <RadzenCheckBox @bind-Value="_model.IsRequired" Name="isRequired" />
+                            <RadzenLabel Text="Required" Component="isRequired" Style="font-weight: 500;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+
+                    <RadzenColumn Size="12">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenLabel Text="Change Reason (Optional)" Style="font-weight: 500;" />
+                            <RadzenTextBox @bind-Value="_model.ChangeReason"
+                                           Placeholder="Describe why this change is being made"
+                                           Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <hr class="rz-border-color-base-300 rz-my-6" />
+
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+                    <RadzenButton Text="Cancel"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Click="@(() => Navigation.NavigateTo($"/configurations/{Id}"))" />
+                    <RadzenButton Text="@(_saving ? "Updating..." : "Update Configuration")"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  ButtonType="ButtonType.Submit"
+                                  IsBusy="@_saving"
+                                  Disabled="@_saving" />
+                </RadzenStack>
+            </RadzenTemplateForm>
+        </RadzenCard>
+    }
+    else if (_loading)
+    {
+        <RadzenStack Gap="1rem" AlignItems="AlignItems.Center" class="rz-mt-4">
+            <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+            <RadzenText TextStyle="TextStyle.H6">Loading configuration...</RadzenText>
+        </RadzenStack>
+    }
+    else
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Danger" ShowIcon="true">
+            Configuration not found.
+        </RadzenAlert>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private ConfigurationDto? _configuration;
+    private UpdateConfigurationModel _model = new();
+    private List<ConfigurationGroupDto> _groups = new();
+    private bool _loading = true;
+    private bool _saving = false;
+    private bool _boolValue = false;
+
+    private List<ValueTypeOption> _valueTypes = new();
+    private List<BoolOption> _boolOptions = new()
+    {
+        new BoolOption { Text = "True", Value = true },
+        new BoolOption { Text = "False", Value = false }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Initialize value types dropdown
+        _valueTypes = Enum.GetValues<ConfigurationValueType>()
+            .Select(vt => new ValueTypeOption { Text = vt.ToString(), Value = vt })
+            .ToList();
+
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            var configTask = ConfigurationClient.GetByIdAsync(Id);
+            var groupTask = GroupClient.GetAllAsync();
+
+            await Task.WhenAll(configTask, groupTask);
+
+            _configuration = await configTask;
+            _groups = (await groupTask).ToList();
+
+            if (_configuration != null)
+            {
+                _model = new UpdateConfigurationModel
+                {
+                    Value = _configuration.Value,
+                    ValueType = _configuration.ValueType,
+                    Description = _configuration.Description,
+                    GroupId = _configuration.GroupId,
+                    IsRequired = _configuration.IsRequired,
+                    DefaultValue = _configuration.DefaultValue
+                };
+
+                if (_configuration.ValueType == ConfigurationValueType.Boolean)
+                {
+                    _boolValue = bool.TryParse(_configuration.Value, out var boolVal) && boolVal;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error loading data: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (_configuration == null) return;
+
+        _saving = true;
+        try
+        {
+            // Handle boolean value conversion
+            if (_model.ValueType == ConfigurationValueType.Boolean)
+            {
+                _model.Value = _boolValue.ToString().ToLower();
+            }
+
+            var updateDto = new UpdateConfigurationDto(
+                _model.Value,
+                _model.ValueType,
+                _model.Description,
+                _model.GroupId,
+                _model.IsRequired,
+                _model.DefaultValue,
+                _model.ChangeReason
+            );
+
+            var result = await ConfigurationClient.UpdateAsync(Id, updateDto);
+            NotificationService.Notify(NotificationSeverity.Success, "Success", $"Configuration '{result.Key}' updated successfully");
+            Navigation.NavigateTo($"/configurations/{Id}");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error updating configuration: {ex.Message}");
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    public class UpdateConfigurationModel
+    {
+        public string Value { get; set; } = string.Empty;
+        public ConfigurationValueType ValueType { get; set; } = ConfigurationValueType.String;
+        public string Description { get; set; } = string.Empty;
+        public Guid? GroupId { get; set; }
+        public bool IsRequired { get; set; }
+        public string? DefaultValue { get; set; }
+        public string? ChangeReason { get; set; }
+    }
+
+    public class ValueTypeOption
+    {
+        public string Text { get; set; } = string.Empty;
+        public ConfigurationValueType Value { get; set; }
+    }
+
+    public class BoolOption
+    {
+        public string Text { get; set; } = string.Empty;
+        public bool Value { get; set; }
+    }
+}

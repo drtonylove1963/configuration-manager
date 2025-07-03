@@ -1,0 +1,844 @@
+/* Custom Theme CSS - Based on Dreamscape/Newfold Design */
+
+/* Global Styles - Tailwind Blue-800 Color Scheme */
+:root {
+    --primary-blue: #1e40af;        /* Tailwind blue-800 */
+    --secondary-blue: #1d4ed8;      /* Tailwind blue-700 */
+    --light-blue: #3b82f6;          /* Tailwind blue-500 */
+    --dark-blue: #1e3a8a;           /* Tailwind blue-900 */
+    --background-gradient: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1e3a8a 100%);
+    --card-shadow: 0 4px 20px rgba(30, 64, 175, 0.15);
+    --hover-shadow: 0 8px 30px rgba(30, 64, 175, 0.25);
+
+    /* Override Radzen CSS Variables */
+    --rz-primary: #1e40af;
+    --rz-secondary: #1d4ed8;
+    --rz-success: #059669;
+    --rz-warning: #d97706;
+    --rz-danger: #dc2626;
+    --rz-info: #2563eb;
+    --rz-light: #f8fafc;
+    --rz-dark: #1e3a8a;
+    --rz-body-background-color: #f8fafc;
+    --rz-content-background-color: #ffffff;
+    --rz-sidebar-background-color: #ffffff;
+    --rz-header-background-color: #1e40af;
+    --rz-text-color: #111827;
+    --rz-text-secondary-color: #6b7280;
+}
+
+/* App Bar Enhancements */
+.mud-appbar {
+    background: var(--background-gradient) !important;
+    box-shadow: 0 2px 10px rgba(30, 64, 175, 0.3) !important;
+}
+
+.mud-appbar .mud-typography {
+    font-weight: 500 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Navigation Drawer */
+.mud-drawer {
+    border-right: 1px solid rgba(30, 64, 175, 0.1) !important;
+    background: linear-gradient(180deg, rgba(248, 250, 252, 1) 0%, rgba(255, 255, 255, 1) 100%) !important;
+}
+
+/* Navigation Header */
+.nav-header {
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
+    border-bottom: 1px solid rgba(30, 64, 175, 0.1) !important;
+    margin-bottom: 8px !important;
+}
+
+/* Navigation Menu Custom Styles */
+.nav-menu-custom {
+    padding: 0 8px !important;
+}
+
+.mud-drawer .mud-nav-link {
+    border-radius: 8px !important;
+    margin: 2px 0 !important;
+    transition: all 0.3s ease !important;
+    font-weight: 400 !important;
+}
+
+.mud-drawer .mud-nav-link:hover {
+    background-color: rgba(33, 150, 243, 0.08) !important;
+    transform: translateX(4px);
+}
+
+.mud-drawer .mud-nav-link.active {
+    background: linear-gradient(90deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%) !important;
+    border-left: 3px solid var(--primary-blue) !important;
+    color: var(--primary-blue) !important;
+    font-weight: 500 !important;
+}
+
+/* Primary Navigation Links */
+.nav-link-primary {
+    font-weight: 500 !important;
+    color: rgba(33, 33, 33, 0.87) !important;
+}
+
+.nav-link-primary:hover {
+    background: rgba(33, 150, 243, 0.08) !important;
+    color: var(--primary-blue) !important;
+}
+
+.nav-link-primary.active {
+    background: linear-gradient(90deg, rgba(33, 150, 243, 0.15) 0%, rgba(33, 150, 243, 0.05) 100%) !important;
+    color: var(--primary-blue) !important;
+    border-left: 3px solid var(--primary-blue) !important;
+}
+
+/* Secondary Navigation Links */
+.nav-link-secondary {
+    font-size: 0.875rem !important;
+    color: rgba(117, 117, 117, 0.87) !important;
+    padding-left: 48px !important;
+}
+
+.nav-link-secondary:hover {
+    background: rgba(33, 150, 243, 0.06) !important;
+    color: var(--primary-blue) !important;
+}
+
+.nav-link-secondary.active {
+    background: rgba(33, 150, 243, 0.1) !important;
+    color: var(--primary-blue) !important;
+    border-left: 2px solid var(--primary-blue) !important;
+}
+
+/* Navigation Groups */
+.nav-group-primary .mud-nav-group-header {
+    font-weight: 500 !important;
+    color: rgba(33, 33, 33, 0.87) !important;
+    border-radius: 8px !important;
+    margin: 2px 0 !important;
+}
+
+.nav-group-primary .mud-nav-group-header:hover {
+    background: rgba(33, 150, 243, 0.06) !important;
+}
+
+/* Navigation Dividers */
+.mud-drawer .mud-divider {
+    margin: 8px 16px !important;
+    background-color: rgba(224, 224, 224, 0.5) !important;
+}
+
+/* Cards and Surfaces */
+.mud-card {
+    border-radius: 12px !important;
+    box-shadow: var(--card-shadow) !important;
+    transition: all 0.3s ease !important;
+    border: 1px solid rgba(224, 224, 224, 0.3) !important;
+}
+
+.mud-card:hover {
+    box-shadow: var(--hover-shadow) !important;
+    transform: translateY(-2px);
+}
+
+.mud-card-header {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(79, 195, 247, 0.05) 100%) !important;
+    border-bottom: 1px solid rgba(224, 224, 224, 0.5) !important;
+}
+
+/* Buttons */
+.mud-button-filled.mud-button-filled-primary {
+    background: var(--background-gradient) !important;
+    box-shadow: 0 3px 12px rgba(33, 150, 243, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.mud-button-filled.mud-button-filled-primary:hover {
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4) !important;
+    transform: translateY(-1px);
+}
+
+.mud-button-outlined.mud-button-outlined-primary {
+    border-color: var(--primary-blue) !important;
+    color: var(--primary-blue) !important;
+    transition: all 0.3s ease !important;
+}
+
+.mud-button-outlined.mud-button-outlined-primary:hover {
+    background: rgba(33, 150, 243, 0.08) !important;
+    transform: translateY(-1px);
+}
+
+/* Form Controls */
+.mud-input-control {
+    border-radius: 8px !important;
+}
+
+.mud-input-control.mud-input-control-margin-normal {
+    margin-bottom: 16px !important;
+}
+
+.mud-input-outlined .mud-input-outlined-border {
+    border-color: rgba(189, 189, 189, 0.6) !important;
+    transition: all 0.3s ease !important;
+}
+
+.mud-input-outlined:hover .mud-input-outlined-border {
+    border-color: var(--primary-blue) !important;
+}
+
+.mud-input-outlined.mud-input-focused .mud-input-outlined-border {
+    border-color: var(--primary-blue) !important;
+    border-width: 2px !important;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1) !important;
+}
+
+/* Tables */
+.mud-table {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: var(--card-shadow) !important;
+}
+
+.mud-table-head {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.08) 0%, rgba(79, 195, 247, 0.08) 100%) !important;
+}
+
+.mud-table-row:hover {
+    background-color: rgba(33, 150, 243, 0.04) !important;
+}
+
+/* Chips */
+.mud-chip {
+    border-radius: 16px !important;
+    font-weight: 500 !important;
+}
+
+.mud-chip.mud-chip-color-primary {
+    background: var(--background-gradient) !important;
+    color: white !important;
+}
+
+/* Progress Indicators */
+.mud-progress-linear {
+    border-radius: 4px !important;
+    overflow: hidden !important;
+}
+
+.mud-progress-linear .mud-progress-linear-bar {
+    background: var(--background-gradient) !important;
+}
+
+/* Dialogs */
+.mud-dialog {
+    border-radius: 16px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+.mud-dialog-title {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(79, 195, 247, 0.05) 100%) !important;
+    border-bottom: 1px solid rgba(224, 224, 224, 0.5) !important;
+    font-weight: 500 !important;
+}
+
+/* Snackbars */
+.mud-snackbar.mud-snackbar-info {
+    background: var(--background-gradient) !important;
+}
+
+/* Custom Logo and Icons */
+.custom-logo {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.custom-logo .mud-icon-root {
+    color: var(--primary-blue) !important;
+}
+
+/* Material Icon Overrides for Tailwind Blue-800 */
+.mud-nav-link .mud-icon-root {
+    color: var(--primary-blue) !important;
+    font-size: 1.25rem !important;
+}
+
+.mud-nav-group .mud-icon-root {
+    color: var(--primary-blue) !important;
+    font-size: 1.25rem !important;
+}
+
+/* Ensure Material Icons are visible */
+.mud-icon-root {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: 'Material Icons', 'Material Symbols Outlined' !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    line-height: 1 !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    white-space: nowrap !important;
+    word-wrap: normal !important;
+    direction: ltr !important;
+    -webkit-font-feature-settings: 'liga' !important;
+    -webkit-font-smoothing: antialiased !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    width: 24px !important;
+    height: 24px !important;
+}
+
+
+
+/* Dashboard Icons */
+.mud-card .mud-icon-root {
+    transition: all 0.3s ease !important;
+}
+
+.mud-card:hover .mud-icon-root {
+    transform: scale(1.1) !important;
+}
+
+/* App Bar Icons */
+.mud-appbar .mud-icon-root {
+    color: white !important;
+    font-size: 1.5rem !important;
+}
+
+/* Custom Utility Classes */
+.gradient-background {
+    background: var(--background-gradient) !important;
+    color: white !important;
+}
+
+.glass-effect {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.blue-accent {
+    color: var(--primary-blue) !important;
+    font-weight: 600 !important;
+}
+
+.hover-lift {
+    transition: transform 0.3s ease !important;
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px) !important;
+}
+
+/* Tailwind Blue-800 Button Overrides */
+.mud-button-filled.mud-button-filled-primary {
+    background-color: var(--primary-blue) !important;
+    color: white !important;
+}
+
+.mud-button-filled.mud-button-filled-primary:hover {
+    background-color: var(--dark-blue) !important;
+    box-shadow: var(--hover-shadow) !important;
+}
+
+.mud-button-outlined.mud-button-outlined-primary {
+    border-color: var(--primary-blue) !important;
+    color: var(--primary-blue) !important;
+}
+
+.mud-button-outlined.mud-button-outlined-primary:hover {
+    background-color: rgba(30, 64, 175, 0.04) !important;
+}
+
+/* Page Specific Styles */
+.page-header {
+    background: var(--background-gradient) !important;
+    color: white !important;
+    padding: 24px !important;
+    border-radius: 12px !important;
+    margin-bottom: 24px !important;
+    box-shadow: var(--card-shadow) !important;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(79, 195, 247, 0.05) 100%) !important;
+    border-left: 4px solid var(--primary-blue) !important;
+}
+
+/* Radzen Layout Customizations */
+.rz-layout {
+    min-height: 100vh;
+}
+
+.rz-header {
+    background: var(--background-gradient) !important;
+    box-shadow: var(--card-shadow) !important;
+}
+
+.rz-sidebar {
+    box-shadow: var(--card-shadow) !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Radzen Button Customizations */
+.rz-button-primary {
+    background: var(--background-gradient) !important;
+    border: none !important;
+    box-shadow: 0 3px 12px rgba(30, 64, 175, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.rz-button-primary:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(30, 64, 175, 0.4) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .mud-card {
+        margin: 8px !important;
+        border-radius: 8px !important;
+    }
+
+    .page-header {
+        padding: 16px !important;
+        margin-bottom: 16px !important;
+    }
+}
+
+/* Animation Classes */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out !important;
+}
+
+/* Loading States */
+.loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%) !important;
+    background-size: 200% 100% !important;
+    animation: shimmer 2s infinite !important;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Dark Theme Support - Improved Colors */
+body.dark-theme,
+.dark-theme {
+    --rz-body-background-color: #121212;
+    --rz-content-background-color: #1e1e1e;
+    --rz-sidebar-background-color: #1e1e1e;
+    --rz-header-background-color: #1e40af;
+    --rz-text-color: #e0e0e0;
+    --rz-text-secondary-color: #b0b0b0;
+    --rz-base-background-color: #121212;
+    --rz-content-text-color: #e0e0e0;
+    --rz-border-color: #333333;
+    background-color: #121212 !important;
+    color: #e0e0e0 !important;
+}
+
+/* Force dark theme on all Radzen components */
+body.dark-theme .rz-layout,
+body.dark-theme .rz-header,
+body.dark-theme .rz-sidebar,
+body.dark-theme .rz-body,
+body.dark-theme .rz-content,
+.dark-theme .rz-layout,
+.dark-theme .rz-header,
+.dark-theme .rz-sidebar,
+.dark-theme .rz-body,
+.dark-theme .rz-content {
+    background-color: var(--rz-content-background-color) !important;
+    color: var(--rz-text-color) !important;
+}
+
+body.dark-theme .rz-layout {
+    background-color: #121212 !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-theme .rz-body {
+    background-color: #121212 !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-theme .rz-content {
+    background-color: #121212 !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-theme .rz-sidebar {
+    background-color: #1e1e1e !important;
+    color: #e0e0e0 !important;
+    border-right: 1px solid #333333 !important;
+}
+
+/* Dark theme component styling */
+body.dark-theme .rz-card,
+.dark-theme .rz-card {
+    background-color: #1e1e1e !important;
+    color: #e0e0e0 !important;
+    border: 1px solid #333333 !important;
+}
+
+body.dark-theme .rz-button,
+.dark-theme .rz-button {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+    border: 1px solid #2563eb !important;
+}
+
+body.dark-theme .rz-textbox,
+body.dark-theme .rz-dropdown,
+.dark-theme .rz-textbox,
+.dark-theme .rz-dropdown {
+    background-color: #2d2d2d !important;
+    color: #e0e0e0 !important;
+    border: 1px solid #404040 !important;
+}
+
+/* Dark theme text elements */
+body.dark-theme .rz-text,
+body.dark-theme .rz-label,
+body.dark-theme h1,
+body.dark-theme h2,
+body.dark-theme h3,
+body.dark-theme h4,
+body.dark-theme h5,
+body.dark-theme h6,
+body.dark-theme p,
+body.dark-theme span,
+body.dark-theme div {
+    color: #ffffff !important;
+}
+
+/* Dark theme cards and panels */
+body.dark-theme .rz-card {
+    background-color: #2d2d2d !important;
+    border: 1px solid #404040 !important;
+    color: #ffffff !important;
+}
+
+body.dark-theme .rz-card .rz-card-content {
+    color: #ffffff !important;
+}
+
+body.dark-theme .rz-panel {
+    background-color: #2d2d2d !important;
+    color: #ffffff !important;
+}
+
+/* Dark theme statistics and dashboard elements */
+body.dark-theme .stats-card {
+    background-color: #2d2d2d !important;
+    color: #ffffff !important;
+    border-left: 4px solid var(--primary-blue) !important;
+}
+
+body.dark-theme .stats-card h3,
+body.dark-theme .stats-card h4,
+body.dark-theme .stats-card .rz-text {
+    color: #ffffff !important;
+}
+
+/* Dark theme buttons */
+body.dark-theme .rz-button {
+    color: #ffffff !important;
+}
+
+body.dark-theme .rz-button-secondary {
+    background-color: #404040 !important;
+    border-color: #404040 !important;
+    color: #ffffff !important;
+}
+
+/* Dark theme sidebar */
+body.dark-theme .rz-sidebar {
+    background-color: #2d2d2d !important;
+    border-right: 1px solid #404040 !important;
+}
+
+body.dark-theme .rz-sidebar .rz-navigation-item {
+    color: #ffffff !important;
+}
+
+body.dark-theme .rz-sidebar .rz-navigation-item:hover {
+    background-color: #404040 !important;
+}
+
+/* Dark theme Radzen Text components */
+body.dark-theme .rz-text,
+body.dark-theme .rz-text-h1,
+body.dark-theme .rz-text-h2,
+body.dark-theme .rz-text-h3,
+body.dark-theme .rz-text-h4,
+body.dark-theme .rz-text-h5,
+body.dark-theme .rz-text-h6,
+body.dark-theme .rz-text-body1,
+body.dark-theme .rz-text-body2 {
+    color: #ffffff !important;
+}
+
+/* Dark theme specific RadzenText styles */
+body.dark-theme .rz-text-style-h3,
+body.dark-theme .rz-text-style-h4,
+body.dark-theme .rz-text-style-h5,
+body.dark-theme .rz-text-style-h6,
+body.dark-theme .rz-text-style-body1,
+body.dark-theme .rz-text-style-body2 {
+    color: #ffffff !important;
+}
+
+/* Dark theme RadzenStack and layout components */
+body.dark-theme .rz-stack {
+    color: #ffffff !important;
+}
+
+/* Dark theme RadzenIcon */
+body.dark-theme .rz-icon {
+    color: #ffffff !important;
+}
+
+/* Dark theme - Force text elements to be white */
+body.dark-theme h1,
+body.dark-theme h2,
+body.dark-theme h3,
+body.dark-theme h4,
+body.dark-theme h5,
+body.dark-theme h6,
+body.dark-theme p,
+body.dark-theme span,
+body.dark-theme div:not(.rz-icon),
+body.dark-theme label,
+body.dark-theme a {
+    color: #ffffff !important;
+}
+
+/* Dark theme - Override specific Radzen component text colors */
+body.dark-theme .rz-button-text {
+    color: #ffffff !important;
+}
+
+/* Dark theme - Ensure card content is visible */
+body.dark-theme .rz-card-content * {
+    color: #ffffff !important;
+}
+
+/* Dark theme - Header text */
+body.dark-theme .rz-header * {
+    color: #ffffff !important;
+}
+
+/* Dark theme - Body content */
+body.dark-theme .rz-body * {
+    color: #ffffff !important;
+}
+
+body.dark-theme .rz-sidebar {
+    background-color: #2d2d2d !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark-theme .rz-body {
+    background-color: #1a1a1a !important;
+}
+
+body.dark-theme .rz-card {
+    background-color: #2d2d2d !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+}
+
+body.dark-theme .rz-text {
+    color: #ffffff !important;
+}
+
+body.dark-theme .rz-panel-menu-item {
+    color: #ffffff !important;
+}
+
+body.dark-theme .rz-panel-menu-item:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Light Theme Support */
+body.light-theme,
+.light-theme {
+    --rz-body-background-color: #f8fafc;
+    --rz-content-background-color: #ffffff;
+    --rz-sidebar-background-color: #ffffff;
+    --rz-header-background-color: #1e40af;
+    --rz-text-color: #111827;
+    --rz-text-secondary-color: #6b7280;
+    --rz-base-background-color: #f8fafc;
+    --rz-content-text-color: #111827;
+    background-color: #f8fafc !important;
+    color: #111827 !important;
+}
+
+/* Force light theme on all Radzen components */
+body.light-theme .rz-layout,
+body.light-theme .rz-header,
+body.light-theme .rz-sidebar,
+body.light-theme .rz-body,
+body.light-theme .rz-content,
+.light-theme .rz-layout,
+.light-theme .rz-header,
+.light-theme .rz-sidebar,
+.light-theme .rz-body,
+.light-theme .rz-content {
+    background-color: var(--rz-content-background-color) !important;
+    color: var(--rz-text-color) !important;
+}
+
+body.light-theme .rz-layout {
+    background-color: initial !important;
+}
+
+body.light-theme .rz-body {
+    background-color: initial !important;
+    color: initial !important;
+}
+
+body.light-theme .rz-content {
+    background-color: initial !important;
+    color: initial !important;
+}
+
+body.light-theme .rz-sidebar {
+    background-color: initial !important;
+    color: initial !important;
+    border-right: initial !important;
+}
+
+/* Light theme component styling */
+body.light-theme .rz-card,
+.light-theme .rz-card {
+    background-color: #ffffff !important;
+    color: #374151 !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-theme .rz-button,
+.light-theme .rz-button {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+    border: 1px solid #2563eb !important;
+}
+
+body.light-theme .rz-textbox,
+body.light-theme .rz-dropdown,
+.light-theme .rz-textbox,
+.light-theme .rz-dropdown {
+    background-color: #ffffff !important;
+    color: #374151 !important;
+    border: 1px solid #d1d5db !important;
+}
+
+body.light-theme .rz-sidebar {
+    background-color: #ffffff !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-theme .rz-card {
+    background-color: #ffffff !important;
+    border: 1px solid rgba(224, 224, 224, 0.3) !important;
+    color: #111827 !important;
+}
+
+body.light-theme .rz-text {
+    color: #111827 !important;
+}
+
+body.light-theme .rz-panel-menu-item {
+    color: #111827 !important;
+}
+
+body.light-theme .rz-panel-menu-item:hover {
+    background-color: rgba(30, 64, 175, 0.08) !important;
+}
+
+/* AGGRESSIVE THEME ENFORCEMENT - Apply to ALL elements */
+/* Dark theme - force on everything */
+body.dark-theme *,
+.dark-theme * {
+    background-color: inherit !important;
+    color: #ffffff !important;
+}
+
+/* Dark theme - specific background overrides */
+body.dark-theme,
+body.dark-theme .rz-layout,
+body.dark-theme .rz-body,
+body.dark-theme .rz-content,
+.dark-theme,
+.dark-theme .rz-layout,
+.dark-theme .rz-body,
+.dark-theme .rz-content {
+    background-color: #1a1a1a !important;
+}
+
+body.dark-theme .rz-sidebar,
+body.dark-theme .rz-header,
+.dark-theme .rz-sidebar,
+.dark-theme .rz-header {
+    background-color: #2d2d2d !important;
+}
+
+body.dark-theme .rz-card,
+.dark-theme .rz-card {
+    background-color: #2d2d2d !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Light theme - force on everything */
+body.light-theme *,
+.light-theme * {
+    background-color: inherit !important;
+    color: #111827 !important;
+}
+
+/* Light theme - specific background overrides */
+body.light-theme,
+body.light-theme .rz-layout,
+body.light-theme .rz-body,
+body.light-theme .rz-content,
+.light-theme,
+.light-theme .rz-layout,
+.light-theme .rz-body,
+.light-theme .rz-content {
+    background-color: #f8fafc !important;
+}
+
+body.light-theme .rz-sidebar,
+body.light-theme .rz-header,
+.light-theme .rz-sidebar,
+.light-theme .rz-header {
+    background-color: #ffffff !important;
+}
+
+body.light-theme .rz-card,
+.light-theme .rz-card {
+    background-color: #ffffff !important;
+    border: 1px solid rgba(224, 224, 224, 0.3) !important;
+}

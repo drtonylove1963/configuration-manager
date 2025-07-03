@@ -1,0 +1,152 @@
+@page "/groups/create"
+@rendermode InteractiveServer
+@using Client.Services
+@using Application.DTOs.ConfigurationGroup
+@inject IConfigurationGroupApiClient GroupClient
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Create Configuration Group</PageTitle>
+
+<div class="rz-p-4">
+    <RadzenBreadCrumb class="rz-mb-4">
+        <RadzenBreadCrumbItem Path="/" Text="Dashboard" />
+        <RadzenBreadCrumbItem Path="/groups" Text="Groups" />
+        <RadzenBreadCrumbItem Text="Create" />
+    </RadzenBreadCrumb>
+
+    <RadzenText TextStyle="TextStyle.H4" class="rz-mb-4">Create New Configuration Group</RadzenText>
+
+    <RadzenCard>
+        <RadzenTemplateForm Data="@_model" Submit="@HandleValidSubmit" TItem="CreateGroupModel">
+            <RadzenRow Gap="2rem">
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenLabel Text="Group Name" Style="font-weight: 500;" />
+                        <RadzenTextBox @bind-Value="_model.Name"
+                                       Placeholder="Enter group name"
+                                       Style="width: 100%;" />
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                            e.g., Database, API, Security
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenLabel Text="Parent Group (Optional)" Style="font-weight: 500;" />
+                        <RadzenDropDown @bind-Value="_model.ParentGroupId"
+                                        Data="@_availableParentGroups"
+                                        TextProperty="Name"
+                                        ValueProperty="Id"
+                                        Placeholder="Select Parent Group"
+                                        AllowClear="true"
+                                        Style="width: 100%;" />
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenLabel Text="Sort Order" Style="font-weight: 500;" />
+                        <RadzenNumeric @bind-Value="_model.SortOrder"
+                                       Min="0"
+                                       Style="width: 100%;" />
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                            Lower numbers appear first
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenColumn>
+
+                <RadzenColumn Size="12">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenLabel Text="Description" Style="font-weight: 500;" />
+                        <RadzenTextArea @bind-Value="_model.Description"
+                                        Rows="3"
+                                        Placeholder="Describe the purpose of this configuration group"
+                                        Style="width: 100%;" />
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <hr class="rz-border-color-base-300 rz-my-6" />
+
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+                <RadzenButton Text="Cancel"
+                              ButtonStyle="ButtonStyle.Light"
+                              Click="@(() => Navigation.NavigateTo("/groups"))" />
+                <RadzenButton Text="@(_saving ? "Creating..." : "Create Group")"
+                              ButtonStyle="ButtonStyle.Primary"
+                              ButtonType="ButtonType.Submit"
+                              IsBusy="@_saving"
+                              Disabled="@_saving" />
+            </RadzenStack>
+        </RadzenTemplateForm>
+    </RadzenCard>
+</div>
+
+@code {
+    private CreateGroupModel _model = new();
+    private List<ConfigurationGroupDto> _availableParentGroups = new();
+    private bool _saving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadParentGroups();
+    }
+
+    private async Task LoadParentGroups()
+    {
+        try
+        {
+            _availableParentGroups = (await GroupClient.GetAllAsync())
+                .Where(g => g.IsActive)
+                .OrderBy(g => g.Name)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error loading parent groups: {ex.Message}");
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        _saving = true;
+        try
+        {
+            var createDto = new CreateConfigurationGroupDto(
+                _model.Name,
+                _model.Description,
+                _model.ParentGroupId,
+                _model.SortOrder
+            );
+
+            var result = await GroupClient.CreateAsync(createDto);
+            NotificationService.Notify(NotificationSeverity.Success, "Success", $"Configuration group '{result.Name}' created successfully");
+            Navigation.NavigateTo("/groups");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error creating group: {ex.Message}");
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private string GetGroupHierarchyName(ConfigurationGroupDto group)
+    {
+        // For now, just return the name. In a more complex implementation,
+        // you might want to show the full hierarchy path
+        return group.Name;
+    }
+
+    public class CreateGroupModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public Guid? ParentGroupId { get; set; }
+        public int SortOrder { get; set; } = 0;
+    }
+}

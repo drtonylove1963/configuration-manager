@@ -1,0 +1,277 @@
+@page "/configurations/{Id:guid}/history"
+@rendermode InteractiveServer
+@using Client.Services
+@using Application.DTOs.Configuration
+@inject IConfigurationApiClient ConfigurationClient
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Configuration History</PageTitle>
+
+<div class="rz-p-4">
+    @if (_configuration != null)
+    {
+        <RadzenBreadCrumb class="rz-mb-4">
+            <RadzenBreadCrumbItem Path="/" Text="Dashboard" />
+            <RadzenBreadCrumbItem Path="/configurations" Text="Configurations" />
+            <RadzenBreadCrumbItem Path="@($"/configurations/{Id}")" Text="@_configuration.Key" />
+            <RadzenBreadCrumbItem Text="History" />
+        </RadzenBreadCrumb>
+
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Gap="1rem" class="rz-mb-4">
+            <RadzenText TextStyle="TextStyle.H4">History: @_configuration.Key</RadzenText>
+            <RadzenButton Text="Back to Configuration"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Icon="arrow_back"
+                          Click="@(() => Navigation.NavigateTo($"/configurations/{Id}"))" />
+        </RadzenStack>
+
+        <RadzenCard>
+            <RadzenStack Gap="1rem">
+                <RadzenText TextStyle="TextStyle.H6">Change History</RadzenText>
+
+                @if (_history.Any())
+                {
+                    <!-- Custom Timeline Layout -->
+                    <div class="timeline-container">
+                        @foreach (var change in _history.OrderByDescending(h => h.ChangedAt))
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-marker @GetTimelineMarkerClass(change)"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-date">
+                                        <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
+                                            @change.ChangedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                                        </RadzenText>
+                                    </div>
+                                    <RadzenCard class="timeline-card">
+                                        <RadzenStack Gap="1rem">
+                                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                                    <RadzenText TextStyle="TextStyle.Subtitle2">Value Changed</RadzenText>
+                                                    @if (change.OldValueType != change.NewValueType)
+                                                    {
+                                                        <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="Type Changed" />
+                                                    }
+                                                </RadzenStack>
+                                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                                    by @change.ChangedBy
+                                                </RadzenText>
+                                            </RadzenStack>
+
+                                            <RadzenRow Gap="1rem">
+                                                <RadzenColumn Size="12" SizeMD="6">
+                                                    <div class="value-box previous-value">
+                                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Previous Value (@change.OldValueType)</RadzenText>
+                                                        <RadzenText TextStyle="TextStyle.Body2" Style="word-break: break-all;">
+                                                            @(string.IsNullOrEmpty(change.OldValue) ? "(empty)" : change.OldValue)
+                                                        </RadzenText>
+                                                    </div>
+                                                </RadzenColumn>
+                                                <RadzenColumn Size="12" SizeMD="6">
+                                                    <div class="value-box new-value">
+                                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">New Value (@change.NewValueType)</RadzenText>
+                                                        <RadzenText TextStyle="TextStyle.Body2" Style="word-break: break-all;">
+                                                            @(string.IsNullOrEmpty(change.NewValue) ? "(empty)" : change.NewValue)
+                                                        </RadzenText>
+                                                    </div>
+                                                </RadzenColumn>
+                                            </RadzenRow>
+
+                                            @if (!string.IsNullOrEmpty(change.ChangeReason))
+                                            {
+                                                <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true">
+                                                    <RadzenText TextStyle="TextStyle.Body2">
+                                                        <strong>Reason:</strong> @change.ChangeReason
+                                                    </RadzenText>
+                                                </RadzenAlert>
+                                            }
+                                        </RadzenStack>
+                                    </RadzenCard>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Initial creation entry -->
+                        <div class="timeline-item">
+                            <div class="timeline-marker timeline-marker-success"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">
+                                        @_configuration.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                                    </RadzenText>
+                                </div>
+                                <RadzenCard class="timeline-card">
+                                    <RadzenStack Gap="1rem">
+                                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                                <RadzenText TextStyle="TextStyle.Subtitle2">Configuration Created</RadzenText>
+                                                <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="Initial" />
+                                            </RadzenStack>
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
+                                                by @_configuration.CreatedBy
+                                            </RadzenText>
+                                        </RadzenStack>
+
+                                        <div class="value-box new-value">
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">Initial Value (@_configuration.ValueType)</RadzenText>
+                                            <RadzenText TextStyle="TextStyle.Body2" Style="word-break: break-all;">
+                                                @(string.IsNullOrEmpty(_configuration.Value) ? "(empty)" : _configuration.Value)
+                                            </RadzenText>
+                                        </div>
+
+                                        <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true">
+                                            <RadzenText TextStyle="TextStyle.Body2">
+                                                <strong>Description:</strong> @_configuration.Description
+                                            </RadzenText>
+                                        </RadzenAlert>
+                                    </RadzenStack>
+                                </RadzenCard>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true">
+                        No changes have been made to this configuration since it was created.
+                    </RadzenAlert>
+                }
+            </RadzenStack>
+        </RadzenCard>
+    }
+    else if (_loading)
+    {
+        <RadzenStack Gap="1rem" AlignItems="AlignItems.Center" class="rz-mt-4">
+            <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+            <RadzenText TextStyle="TextStyle.H6">Loading configuration history...</RadzenText>
+        </RadzenStack>
+    }
+    else
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Danger" ShowIcon="true">
+            Configuration not found.
+        </RadzenAlert>
+    }
+</div>
+
+<style>
+    .timeline-container {
+        position: relative;
+        padding-left: 2rem;
+    }
+
+    .timeline-container::before {
+        content: '';
+        position: absolute;
+        left: 0.75rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--rz-border-color);
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -2rem;
+        top: 0.5rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid var(--rz-primary);
+        background: white;
+        z-index: 1;
+    }
+
+    .timeline-marker-primary {
+        border-color: var(--rz-primary);
+    }
+
+    .timeline-marker-warning {
+        border-color: var(--rz-warning);
+    }
+
+    .timeline-marker-success {
+        border-color: var(--rz-success);
+    }
+
+    .timeline-content {
+        margin-left: 1rem;
+    }
+
+    .timeline-date {
+        margin-bottom: 0.5rem;
+    }
+
+    .timeline-card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .value-box {
+        padding: 1rem;
+        border-radius: 4px;
+        border: 1px solid var(--rz-border-color);
+    }
+
+    .previous-value {
+        background-color: rgba(var(--rz-danger-rgb), 0.1);
+        border-color: rgba(var(--rz-danger-rgb), 0.3);
+    }
+
+    .new-value {
+        background-color: rgba(var(--rz-success-rgb), 0.1);
+        border-color: rgba(var(--rz-success-rgb), 0.3);
+    }
+</style>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private ConfigurationDto? _configuration;
+    private List<ConfigurationHistoryDto> _history = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            var configTask = ConfigurationClient.GetByIdAsync(Id);
+            var historyTask = ConfigurationClient.GetHistoryAsync(Id);
+
+            await Task.WhenAll(configTask, historyTask);
+
+            _configuration = await configTask;
+            _history = (await historyTask).ToList();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error loading data: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private string GetTimelineMarkerClass(ConfigurationHistoryDto change)
+    {
+        // Different colors based on the type of change
+        if (change.OldValueType != change.NewValueType)
+        {
+            return "timeline-marker-warning"; // Type change
+        }
+
+        return "timeline-marker-primary"; // Regular value change
+    }
+}

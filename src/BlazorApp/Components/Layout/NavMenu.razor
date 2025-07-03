@@ -1,0 +1,45 @@
+﻿@rendermode InteractiveServer
+@using Radzen
+@using Radzen.Blazor
+@inject NavigationManager Navigation
+
+<div class="nav-header">
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-p-4">
+        <RadzenIcon Icon="tune" Style="color: var(--rz-primary);" />
+        <RadzenText TextStyle="TextStyle.Subtitle1" class="blue-accent" Style="font-weight: 600;">Configuration Manager</RadzenText>
+    </RadzenStack>
+</div>
+
+<RadzenPanelMenu class="nav-menu-custom">
+    <RadzenPanelMenuItem Text="Dashboard" Icon="dashboard" Path="/" />
+
+    <RadzenPanelMenuItem Text="Configurations" Icon="settings" Expanded="_configurationsExpanded">
+        <RadzenPanelMenuItem Text="All Configurations" Icon="list" Path="/configurations" />
+        <RadzenPanelMenuItem Text="Create Configuration" Icon="add" Path="/configurations/create" />
+    </RadzenPanelMenuItem>
+
+    <RadzenPanelMenuItem Text="Environments" Icon="cloud_queue" Expanded="_environmentsExpanded">
+        <RadzenPanelMenuItem Text="All Environments" Icon="storage" Path="/environments" />
+        <RadzenPanelMenuItem Text="Create Environment" Icon="cloud_upload" Path="/environments/create" />
+    </RadzenPanelMenuItem>
+
+    <RadzenPanelMenuItem Text="Groups" Icon="account_tree" Expanded="_groupsExpanded">
+        <RadzenPanelMenuItem Text="All Groups" Icon="folder_open" Path="/groups" />
+        <RadzenPanelMenuItem Text="Create Group" Icon="create_new_folder" Path="/groups/create" />
+    </RadzenPanelMenuItem>
+
+    <RadzenPanelMenuItem Text="Audit Logs" Icon="assignment" Path="/audit" />
+    <RadzenPanelMenuItem Text="System Settings" Icon="settings" Path="/settings" />
+</RadzenPanelMenu>
+
+@code {
+    private bool _configurationsExpanded = true;
+    private bool _environmentsExpanded = false;
+    private bool _groupsExpanded = false;
+
+    protected override void OnInitialized()
+    {
+        Console.WriteLine("NavMenu initialized");
+    }
+}
+

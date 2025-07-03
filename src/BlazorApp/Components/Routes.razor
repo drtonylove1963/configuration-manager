@@ -1,0 +1,18 @@
+﻿<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="typeof(Layout.MainLayout)">
+            <RadzenStack Gap="2rem" class="rz-p-4">
+                <RadzenText TextStyle="TextStyle.H3">Page Not Found</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1">Sorry, there's nothing at this address.</RadzenText>
+                <RadzenButton Text="Go Home" ButtonStyle="ButtonStyle.Primary" Click="@(() => Navigation.NavigateTo("/"))" />
+            </RadzenStack>
+        </LayoutView>
+    </NotFound>
+</Router>
+
+@inject NavigationManager Navigation

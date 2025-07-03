@@ -1,0 +1,52 @@
+﻿@inherits LayoutComponentBase
+@implements IDisposable
+
+@inject ICurrentUserService CurrentUserService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject IThemeService ThemeService
+@inject IJSRuntime JSRuntime
+<RadzenNotification />
+<RadzenDialog />
+
+<RadzenLayout>
+    <RadzenHeader>
+        <HeaderControls />
+    </RadzenHeader>
+
+    <RadzenSidebar @bind-Expanded="_drawerOpen">
+        <NavMenu />
+    </RadzenSidebar>
+
+    <RadzenBody>
+        <div class="rz-p-4">
+            @Body
+        </div>
+    </RadzenBody>
+</RadzenLayout>
+
+@code {
+    private bool _drawerOpen = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Subscribe to theme changes
+            ThemeService.ThemeChanged += OnThemeChanged;
+
+            // Theme is already initialized by the JavaScript on page load
+            Console.WriteLine("MainLayout: Theme system ready");
+        }
+    }
+
+    private void OnThemeChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ThemeService.ThemeChanged -= OnThemeChanged;
+    }
+}

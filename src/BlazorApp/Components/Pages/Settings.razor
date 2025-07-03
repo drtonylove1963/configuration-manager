@@ -1,0 +1,132 @@
+@page "/settings"
+@rendermode InteractiveServer
+@inject NotificationService NotificationService
+
+<PageTitle>System Settings</PageTitle>
+
+<div class="rz-p-4">
+    <RadzenText TextStyle="TextStyle.H3" class="rz-mb-4">System Settings</RadzenText>
+    <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-4">Configure system-wide settings and preferences.</RadzenText>
+
+    <RadzenRow Gap="2rem">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenCard>
+                <RadzenStack Gap="1rem">
+                    <RadzenText TextStyle="TextStyle.H6">General Settings</RadzenText>
+
+                    <RadzenTextBox @bind-Value="_systemName"
+                                   Placeholder="System Name"
+                                   Style="width: 100%;" />
+
+                    <RadzenTextArea @bind-Value="_description"
+                                    Placeholder="Description"
+                                    Rows="3"
+                                    Style="width: 100%;" />
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenCheckBox @bind-Value="_enableAuditLogging" Name="auditLogging" />
+                        <RadzenLabel Text="Enable Audit Logging" Component="auditLogging" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenCheckBox @bind-Value="_enableNotifications" Name="notifications" />
+                        <RadzenLabel Text="Enable Notifications" Component="notifications" />
+                    </RadzenStack>
+
+                    <RadzenButton Text="Save Changes"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Click="SaveGeneralSettings" />
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenCard>
+                <RadzenStack Gap="1rem">
+                    <RadzenText TextStyle="TextStyle.H6">Security Settings</RadzenText>
+
+                    <RadzenNumeric @bind-Value="_sessionTimeout"
+                                   Placeholder="Session Timeout (minutes)"
+                                   Min="5"
+                                   Max="480"
+                                   Style="width: 100%;" />
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenCheckBox @bind-Value="_requireTwoFactor" Name="twoFactor" />
+                        <RadzenLabel Text="Require Two-Factor Authentication" Component="twoFactor" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenCheckBox @bind-Value="_enablePasswordExpiry" Name="passwordExpiry" />
+                        <RadzenLabel Text="Enable Password Expiry" Component="passwordExpiry" />
+                    </RadzenStack>
+
+                    <RadzenNumeric @bind-Value="_passwordExpiryDays"
+                                   Placeholder="Password Expiry (days)"
+                                   Min="30"
+                                   Max="365"
+                                   Disabled="!_enablePasswordExpiry"
+                                   Style="width: 100%;" />
+
+                    <RadzenButton Text="Save Changes"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Click="SaveSecuritySettings" />
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12">
+            <RadzenCard>
+                <RadzenStack Gap="1rem">
+                    <RadzenText TextStyle="TextStyle.H6">System Information</RadzenText>
+
+                    <RadzenDataGrid Data="@_systemInfo" TItem="SystemInfoItem" AllowPaging="false" AllowSorting="false">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="SystemInfoItem" Property="Property" Title="Property" />
+                            <RadzenDataGridColumn TItem="SystemInfoItem" Property="Value" Title="Value" />
+                        </Columns>
+                    </RadzenDataGrid>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+</div>
+
+@code {
+    private string _systemName = "Configuration Manager";
+    private string _description = "Centralized configuration management system";
+    private bool _enableAuditLogging = true;
+    private bool _enableNotifications = true;
+    private int _sessionTimeout = 60;
+    private bool _requireTwoFactor = false;
+    private bool _enablePasswordExpiry = false;
+    private int _passwordExpiryDays = 90;
+
+    private List<SystemInfoItem> _systemInfo = new()
+    {
+        new SystemInfoItem { Property = "Application Version", Value = "1.0.0" },
+        new SystemInfoItem { Property = "Database Version", Value = "SQL Server 2022" },
+        new SystemInfoItem { Property = "Last Backup", Value = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd HH:mm") },
+        new SystemInfoItem { Property = "System Uptime", Value = TimeSpan.FromHours(24).ToString(@"dd\.hh\:mm\:ss") }
+    };
+
+    private async Task SaveGeneralSettings()
+    {
+        // TODO: Implement actual save logic
+        NotificationService.Notify(NotificationSeverity.Success, "Success", "General settings saved successfully");
+        await Task.Delay(100); // Simulate async operation
+    }
+
+    private async Task SaveSecuritySettings()
+    {
+        // TODO: Implement actual save logic
+        NotificationService.Notify(NotificationSeverity.Success, "Success", "Security settings saved successfully");
+        await Task.Delay(100); // Simulate async operation
+    }
+
+    public class SystemInfoItem
+    {
+        public string Property { get; set; } = "";
+        public string Value { get; set; } = "";
+    }
+}

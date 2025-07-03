@@ -1,0 +1,24 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="groupsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Folder structure -->
+  <path d="M10 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V8C22 6.9 21.1 6 20 6H12L10 4Z" 
+        fill="url(#groupsGradient)" opacity="0.8"/>
+  
+  <!-- Inner folder -->
+  <path d="M8 8H6C5.45 8 5 8.45 5 9V16C5 16.55 5.45 17 6 17H18C18.55 17 19 16.55 19 16V10C19 9.45 18.55 9 18 9H10L8 8Z" 
+        fill="url(#groupsGradient)"/>
+  
+  <!-- Group indicators -->
+  <circle cx="8" cy="12" r="1" fill="white" opacity="0.9"/>
+  <circle cx="12" cy="12" r="1" fill="white" opacity="0.7"/>
+  <circle cx="16" cy="12" r="1" fill="white" opacity="0.5"/>
+  
+  <!-- Hierarchy lines -->
+  <line x1="8" y1="13" x2="16" y2="13" stroke="white" stroke-width="0.5" opacity="0.6"/>
+</svg>

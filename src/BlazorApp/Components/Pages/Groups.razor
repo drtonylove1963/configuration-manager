@@ -1,0 +1,265 @@
+@page "/groups"
+@rendermode InteractiveServer
+@using Client.Services
+@using Application.DTOs.ConfigurationGroup
+@inject IConfigurationGroupApiClient GroupClient
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Configuration Groups</PageTitle>
+
+<div class="rz-p-4">
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" class="rz-mb-4">
+        <RadzenText TextStyle="TextStyle.H4">Configuration Groups</RadzenText>
+        <RadzenButton Text="Create Group"
+                      ButtonStyle="ButtonStyle.Primary"
+                      Icon="add"
+                      Click="@(() => Navigation.NavigateTo("/groups/create"))" />
+    </RadzenStack>
+
+    <RadzenRow Gap="2rem">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenCard>
+                <RadzenStack Gap="1rem">
+                    <RadzenText TextStyle="TextStyle.H6">Group Hierarchy</RadzenText>
+
+                    @if (_groupTree.Any())
+                    {
+                        <RadzenTree Data="@_groupTree"
+                                    @bind-Value="@_selectedTreeValue"
+                                    Change="@OnGroupSelected">
+                            <RadzenTreeLevel TextProperty="Name"
+                                             ChildrenProperty="Children"
+                                             HasChildren="@(e => ((ConfigurationGroupTreeDto)e).Children.Any())" />
+                        </RadzenTree>
+                    }
+                    else if (_loading)
+                    {
+                        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                    }
+                    else
+                    {
+                        <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true">
+                            No groups found. Create your first group to get started.
+                        </RadzenAlert>
+                    }
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenCard>
+                <RadzenStack Gap="1rem">
+                    <RadzenText TextStyle="TextStyle.H6">All Groups</RadzenText>
+
+                    <RadzenDataGrid Data="@_allGroups"
+                                    IsLoading="@_loading"
+                                    AllowFiltering="true"
+                                    AllowSorting="true"
+                                    TItem="ConfigurationGroupDto"
+                                    Density="Density.Compact"
+                                    RowSelect="@OnRowClick">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="ConfigurationGroupDto" Property="Name" Title="Name" />
+                            <RadzenDataGridColumn TItem="ConfigurationGroupDto" Property="ParentGroupName" Title="Parent" />
+                            <RadzenDataGridColumn TItem="ConfigurationGroupDto" Property="ConfigurationCount" Title="Configs" />
+                            <RadzenDataGridColumn TItem="ConfigurationGroupDto" Property="ChildGroupCount" Title="Children" />
+                            <RadzenDataGridColumn TItem="ConfigurationGroupDto" Title="Status" Sortable="false">
+                                <Template Context="group">
+                                    <RadzenBadge BadgeStyle="@(group.IsActive ? BadgeStyle.Success : BadgeStyle.Secondary)"
+                                                 Text="@(group.IsActive ? "Active" : "Inactive")" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="ConfigurationGroupDto" Title="Actions" Sortable="false">
+                                <Template Context="group">
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                        <RadzenButton ButtonStyle="ButtonStyle.Light"
+                                                      Icon="edit"
+                                                      Size="ButtonSize.Small"
+                                                      Click="@(() => EditGroup(group.Id))" />
+                                        @if (group.IsActive)
+                                        {
+                                            <RadzenButton ButtonStyle="ButtonStyle.Warning"
+                                                          Icon="pause"
+                                                          Size="ButtonSize.Small"
+                                                          Click="@(() => DeactivateGroup(group))" />
+                                        }
+                                        else
+                                        {
+                                            <RadzenButton ButtonStyle="ButtonStyle.Success"
+                                                          Icon="play_arrow"
+                                                          Size="ButtonSize.Small"
+                                                          Click="@(() => ActivateGroup(group))" />
+                                        }
+                                        <RadzenButton ButtonStyle="ButtonStyle.Danger"
+                                                      Icon="delete"
+                                                      Size="ButtonSize.Small"
+                                                      Disabled="@(group.ConfigurationCount > 0 || group.ChildGroupCount > 0)"
+                                                      Click="@(() => DeleteGroup(group))" />
+                                    </RadzenStack>
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+
+    @if (_selectedGroup != null)
+    {
+        <RadzenCard class="rz-mt-4">
+            <RadzenStack Gap="1rem">
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                    <RadzenText TextStyle="TextStyle.H6">Selected Group: @_selectedGroup.Name</RadzenText>
+                    <RadzenButton Text="View Details"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Size="ButtonSize.Small"
+                                  Icon="visibility"
+                                  Click="@(() => Navigation.NavigateTo($"/groups/{_selectedGroup.Id}"))" />
+                </RadzenStack>
+
+                <RadzenRow Gap="2rem">
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Gap="1rem">
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Description</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body2">@_selectedGroup.Description</RadzenText>
+                            </RadzenStack>
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Configurations</RadzenText>
+                                <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@_selectedGroup.ConfigurationCount.ToString()" />
+                            </RadzenStack>
+                        </RadzenStack>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenStack Gap="1rem">
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Status</RadzenText>
+                                <RadzenBadge BadgeStyle="@(_selectedGroup.IsActive ? BadgeStyle.Success : BadgeStyle.Secondary)"
+                                             Text="@(_selectedGroup.IsActive ? "Active" : "Inactive")" />
+                            </RadzenStack>
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Child Groups</RadzenText>
+                                <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="@_selectedGroup.ChildGroupCount.ToString()" />
+                            </RadzenStack>
+                        </RadzenStack>
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenStack>
+        </RadzenCard>
+    }
+</div>
+
+@code {
+    private List<ConfigurationGroupTreeDto> _groupTree = new();
+    private List<ConfigurationGroupDto> _allGroups = new();
+    private ConfigurationGroupTreeDto? _selectedGroup;
+    private object? _selectedTreeValue;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        try
+        {
+            var treeTask = GroupClient.GetGroupTreeAsync();
+            var allTask = GroupClient.GetAllAsync();
+
+            await Task.WhenAll(treeTask, allTask);
+
+            _groupTree = (await treeTask).ToList();
+            _allGroups = (await allTask).OrderBy(g => g.SortOrder).ThenBy(g => g.Name).ToList();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error loading groups: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void OnGroupSelected(object? value)
+    {
+        _selectedGroup = value as ConfigurationGroupTreeDto;
+    }
+
+    private void OnRowClick(ConfigurationGroupDto group)
+    {
+        Navigation.NavigateTo($"/groups/{group.Id}");
+    }
+
+    private void EditGroup(Guid id)
+    {
+        Navigation.NavigateTo($"/groups/{id}/edit");
+    }
+
+    private async Task ActivateGroup(ConfigurationGroupDto group)
+    {
+        try
+        {
+            await GroupClient.ActivateAsync(group.Id);
+            NotificationService.Notify(NotificationSeverity.Success, "Success", $"Group '{group.Name}' activated successfully");
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error activating group: {ex.Message}");
+        }
+    }
+
+    private async Task DeactivateGroup(ConfigurationGroupDto group)
+    {
+        try
+        {
+            // TODO: Implement confirmation dialog
+            NotificationService.Notify(NotificationSeverity.Warning, "Deactivate Group",
+                $"Deactivate functionality for '{group.Name}' would be implemented here");
+
+            // await GroupClient.DeactivateAsync(group.Id);
+            // NotificationService.Notify(NotificationSeverity.Success, "Success", $"Group '{group.Name}' deactivated successfully");
+            // await LoadData();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error deactivating group: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteGroup(ConfigurationGroupDto group)
+    {
+        if (group.ConfigurationCount > 0 || group.ChildGroupCount > 0)
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Cannot Delete",
+                $"Cannot delete group '{group.Name}' because it contains configurations or child groups");
+            return;
+        }
+
+        try
+        {
+            // TODO: Implement confirmation dialog
+            NotificationService.Notify(NotificationSeverity.Warning, "Delete Group",
+                $"Delete functionality for '{group.Name}' would be implemented here");
+
+            // await GroupClient.DeleteAsync(group.Id);
+            // NotificationService.Notify(NotificationSeverity.Success, "Success", $"Group '{group.Name}' deleted successfully");
+            // await LoadData();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error deleting group: {ex.Message}");
+        }
+    }
+
+    private string GetGroupDisplayText(ConfigurationGroupTreeDto group)
+    {
+        return $"{group.Name} ({group.ConfigurationCount})";
+    }
+}

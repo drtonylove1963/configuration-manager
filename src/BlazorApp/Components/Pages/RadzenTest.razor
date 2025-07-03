@@ -1,0 +1,86 @@
+@page "/radzen-test"
+@rendermode InteractiveServer
+@inject NotificationService NotificationService
+
+<PageTitle>Radzen Test</PageTitle>
+
+<RadzenStack Gap="2rem">
+    <RadzenText TextStyle="TextStyle.H3">Radzen Components Test</RadzenText>
+    
+    <RadzenCard>
+        <RadzenStack Gap="1rem">
+            <RadzenText TextStyle="TextStyle.H5">Basic Components</RadzenText>
+            
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem">
+                <RadzenButton Text="Primary Button" ButtonStyle="ButtonStyle.Primary" Click="@ShowNotification" />
+                <RadzenButton Text="Secondary Button" ButtonStyle="ButtonStyle.Secondary" Click="@ShowNotification" />
+                <RadzenButton Text="Success Button" ButtonStyle="ButtonStyle.Success" Click="@ShowNotification" />
+            </RadzenStack>
+            
+            <RadzenTextBox @bind-Value="@_textValue" Placeholder="Enter some text..." />
+            
+            <RadzenCheckBox @bind-Value="@_checkValue" Name="testCheck" />
+            <RadzenLabel Text="Test Checkbox" Component="testCheck" />
+            
+            <RadzenDropDown @bind-Value="@_selectedValue" Data="@_options" TextProperty="Text" ValueProperty="Value" />
+        </RadzenStack>
+    </RadzenCard>
+    
+    <RadzenCard>
+        <RadzenStack Gap="1rem">
+            <RadzenText TextStyle="TextStyle.H5">Data Grid Test</RadzenText>
+            
+            <RadzenDataGrid Data="@_testData" TItem="TestItem" AllowFiltering="true" AllowSorting="true">
+                <Columns>
+                    <RadzenDataGridColumn TItem="TestItem" Property="Id" Title="ID" />
+                    <RadzenDataGridColumn TItem="TestItem" Property="Name" Title="Name" />
+                    <RadzenDataGridColumn TItem="TestItem" Property="Description" Title="Description" />
+                    <RadzenDataGridColumn TItem="TestItem" Property="IsActive" Title="Active">
+                        <Template Context="item">
+                            <RadzenCheckBox Value="@item.IsActive" Disabled="true" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenStack>
+    </RadzenCard>
+</RadzenStack>
+
+@code {
+    private string _textValue = "";
+    private bool _checkValue = false;
+    private string _selectedValue = "option1";
+    
+    private List<OptionItem> _options = new()
+    {
+        new OptionItem { Text = "Option 1", Value = "option1" },
+        new OptionItem { Text = "Option 2", Value = "option2" },
+        new OptionItem { Text = "Option 3", Value = "option3" }
+    };
+    
+    private List<TestItem> _testData = new()
+    {
+        new TestItem { Id = 1, Name = "Test Item 1", Description = "First test item", IsActive = true },
+        new TestItem { Id = 2, Name = "Test Item 2", Description = "Second test item", IsActive = false },
+        new TestItem { Id = 3, Name = "Test Item 3", Description = "Third test item", IsActive = true }
+    };
+    
+    private void ShowNotification()
+    {
+        NotificationService.Notify(NotificationSeverity.Success, "Success", "Button clicked successfully!");
+    }
+    
+    public class OptionItem
+    {
+        public string Text { get; set; } = "";
+        public string Value { get; set; } = "";
+    }
+    
+    public class TestItem
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public bool IsActive { get; set; }
+    }
+}

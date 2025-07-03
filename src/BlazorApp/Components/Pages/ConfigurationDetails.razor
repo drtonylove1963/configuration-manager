@@ -1,0 +1,258 @@
+@page "/configurations/{Id:guid}"
+@rendermode InteractiveServer
+@using Client.Services
+@using Application.DTOs.Configuration
+@inject IConfigurationApiClient ConfigurationClient
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Configuration Details</PageTitle>
+
+<div class="rz-p-4">
+    @if (_configuration != null)
+    {
+        <RadzenBreadCrumb class="rz-mb-4">
+            <RadzenBreadCrumbItem Path="/" Text="Dashboard" />
+            <RadzenBreadCrumbItem Path="/configurations" Text="Configurations" />
+            <RadzenBreadCrumbItem Text="@_configuration.Key" />
+        </RadzenBreadCrumb>
+
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Gap="1rem" class="rz-mb-4">
+            <RadzenText TextStyle="TextStyle.H4">@_configuration.Key</RadzenText>
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                <RadzenButton Text="Edit"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Icon="edit"
+                              Click="@EditConfiguration" />
+                <RadzenButton Text="History"
+                              ButtonStyle="ButtonStyle.Info"
+                              Icon="history"
+                              Click="@ViewHistory" />
+                <RadzenButton Text="Test"
+                              ButtonStyle="ButtonStyle.Warning"
+                              Icon="bug_report"
+                              Click="@TestClick" />
+            </RadzenStack>
+        </RadzenStack>
+
+        <RadzenRow Gap="2rem">
+            <RadzenColumn Size="12" SizeMD="8">
+                <RadzenCard>
+                    <RadzenStack Gap="1rem">
+                        <RadzenText TextStyle="TextStyle.H6">Configuration Details</RadzenText>
+
+                        <RadzenStack Gap="1rem">
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Key</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1">@_configuration.Key</RadzenText>
+                            </RadzenStack>
+
+                            <hr class="rz-border-color-base-300" />
+
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Value</RadzenText>
+                                @if (_configuration.IsEncrypted)
+                                {
+                                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                        <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="Encrypted" />
+                                        <RadzenButton ButtonStyle="ButtonStyle.Light"
+                                                      Size="ButtonSize.ExtraSmall"
+                                                      Icon="@(_showEncryptedValue ? "visibility_off" : "visibility")"
+                                                      Click="@(() => _showEncryptedValue = !_showEncryptedValue)" />
+                                    </RadzenStack>
+                                }
+                                else
+                                {
+                                    <RadzenText TextStyle="TextStyle.Body1" Style="word-break: break-all;">@_configuration.Value</RadzenText>
+                                }
+                            </RadzenStack>
+
+                            @if (_configuration.IsEncrypted && _showEncryptedValue)
+                            {
+                                <RadzenAlert AlertStyle="AlertStyle.Warning" ShowIcon="true">
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="word-break: break-all;">@_configuration.Value</RadzenText>
+                                </RadzenAlert>
+                            }
+
+                            <hr class="rz-border-color-base-300" />
+
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Type</RadzenText>
+                                <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@_configuration.ValueType.ToString()" />
+                            </RadzenStack>
+
+                            <hr class="rz-border-color-base-300" />
+
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Description</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1" Style="text-align: right; max-width: 60%;">@_configuration.Description</RadzenText>
+                            </RadzenStack>
+
+                            <hr class="rz-border-color-base-300" />
+
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Environment</RadzenText>
+                                <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="@_configuration.EnvironmentName" />
+                            </RadzenStack>
+
+                            @if (!string.IsNullOrEmpty(_configuration.GroupName))
+                            {
+                                <hr class="rz-border-color-base-300" />
+
+                                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                    <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Group</RadzenText>
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Light" Text="@_configuration.GroupName" />
+                                </RadzenStack>
+                            }
+
+                            @if (!string.IsNullOrEmpty(_configuration.DefaultValue))
+                            {
+                                <hr class="rz-border-color-base-300" />
+
+                                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                    <RadzenText TextStyle="TextStyle.Subtitle2" Style="color: var(--rz-text-secondary-color);">Default Value</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body1" Style="word-break: break-all;">@_configuration.DefaultValue</RadzenText>
+                                </RadzenStack>
+                            }
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="4">
+                <RadzenCard>
+                    <RadzenStack Gap="1rem">
+                        <RadzenText TextStyle="TextStyle.H6">Properties</RadzenText>
+
+                        <RadzenStack Gap="1rem">
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                <RadzenText TextStyle="TextStyle.Body2">Status</RadzenText>
+                                <RadzenBadge BadgeStyle="@(_configuration.IsActive ? BadgeStyle.Success : BadgeStyle.Light)"
+                                             Text="@(_configuration.IsActive ? "Active" : "Inactive")" />
+                            </RadzenStack>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                <RadzenText TextStyle="TextStyle.Body2">Required</RadzenText>
+                                @if (_configuration.IsRequired)
+                                {
+                                    <RadzenIcon Icon="check_circle" Style="color: var(--rz-success);" />
+                                }
+                                else
+                                {
+                                    <RadzenIcon Icon="cancel" Style="color: var(--rz-text-disabled-color);" />
+                                }
+                            </RadzenStack>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                <RadzenText TextStyle="TextStyle.Body2">Encrypted</RadzenText>
+                                @if (_configuration.IsEncrypted)
+                                {
+                                    <RadzenIcon Icon="lock" Style="color: var(--rz-warning);" />
+                                }
+                                else
+                                {
+                                    <RadzenIcon Icon="lock_open" Style="color: var(--rz-text-disabled-color);" />
+                                }
+                            </RadzenStack>
+
+                            <hr class="rz-border-color-base-300" />
+
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                <RadzenText TextStyle="TextStyle.Body2">Version</RadzenText>
+                                <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@($"v{_configuration.Version}")" />
+                            </RadzenStack>
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenCard>
+
+                <RadzenCard class="rz-mt-4">
+                    <RadzenStack Gap="1rem">
+                        <RadzenText TextStyle="TextStyle.H6">Metadata</RadzenText>
+
+                        <RadzenStack Gap="1rem">
+                            <RadzenStack Gap="0.25rem">
+                                <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">Created</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body2">@_configuration.CreatedAt.ToString("yyyy-MM-dd HH:mm")</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">by @_configuration.CreatedBy</RadzenText>
+                            </RadzenStack>
+
+                            @if (_configuration.UpdatedAt.HasValue)
+                            {
+                                <hr class="rz-border-color-base-300" />
+
+                                <RadzenStack Gap="0.25rem">
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-secondary-color);">Last Updated</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body2">@_configuration.UpdatedAt.Value.ToString("yyyy-MM-dd HH:mm")</RadzenText>
+                                    @if (!string.IsNullOrEmpty(_configuration.UpdatedBy))
+                                    {
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">by @_configuration.UpdatedBy</RadzenText>
+                                    }
+                                </RadzenStack>
+                            }
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+    }
+    else if (_loading)
+    {
+        <RadzenStack Gap="1rem" AlignItems="AlignItems.Center" class="rz-mt-4">
+            <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+            <RadzenText TextStyle="TextStyle.H6">Loading configuration...</RadzenText>
+        </RadzenStack>
+    }
+    else
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Danger" ShowIcon="true">
+            Configuration not found.
+        </RadzenAlert>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private ConfigurationDto? _configuration;
+    private bool _loading = true;
+    private bool _showEncryptedValue = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadConfiguration();
+    }
+
+    private async Task LoadConfiguration()
+    {
+        _loading = true;
+        try
+        {
+            _configuration = await ConfigurationClient.GetByIdAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error loading configuration: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void EditConfiguration()
+    {
+        NotificationService.Notify(NotificationSeverity.Info, "Debug", "Edit button clicked!");
+        // Navigation.NavigateTo($"/configurations/{Id}/edit");
+    }
+
+    private void ViewHistory()
+    {
+        NotificationService.Notify(NotificationSeverity.Info, "Debug", "History button clicked!");
+        // Navigation.NavigateTo($"/configurations/{Id}/history");
+    }
+
+    private void TestClick()
+    {
+        NotificationService.Notify(NotificationSeverity.Success, "Test", "Test button clicked successfully!");
+    }
+}

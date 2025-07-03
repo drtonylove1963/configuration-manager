@@ -1,0 +1,152 @@
+@page "/"
+@page "/home"
+@rendermode InteractiveServer
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Configuration Manager - Dashboard</PageTitle>
+
+<RadzenStack Gap="2rem">
+    <RadzenText TextStyle="TextStyle.H3">Welcome to Configuration Manager</RadzenText>
+    <RadzenText TextStyle="TextStyle.Body1">Manage your application configurations with ease.</RadzenText>
+
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem">
+        <RadzenButton Text="Get Started"
+                      ButtonStyle="ButtonStyle.Primary"
+                      Icon="play_arrow"
+                      Click="@(() => ShowWelcomeMessage())" />
+        <RadzenButton Text="Test Click"
+                      ButtonStyle="ButtonStyle.Warning"
+                      Icon="bug_report"
+                      Click="@(() => TestClick())" />
+    </RadzenStack>
+
+    @if (_isLoading)
+    {
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    }
+</RadzenStack>
+
+<!-- Quick Stats Cards -->
+<RadzenRow Gap="2rem" class="rz-mt-4">
+    <RadzenColumn Size="12" SizeMD="3">
+        <RadzenCard>
+            <RadzenStack Gap="1rem">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+                    <RadzenIcon Icon="settings" Style="font-size: 2rem; color: var(--rz-primary);" />
+                    <RadzenStack Gap="0">
+                        <RadzenText TextStyle="TextStyle.H6" class="rz-mb-0">@(_isLoading ? "..." : "24")</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">Total Configurations</RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenColumn>
+
+    <RadzenColumn Size="12" SizeMD="3">
+        <RadzenCard>
+            <RadzenStack Gap="1rem">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+                    <RadzenIcon Icon="cloud_queue" Style="font-size: 2rem; color: var(--rz-success);" />
+                    <RadzenStack Gap="0">
+                        <RadzenText TextStyle="TextStyle.H6" class="rz-mb-0">@(_isLoading ? "..." : "8")</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">Environments</RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenColumn>
+
+    <RadzenColumn Size="12" SizeMD="3">
+        <RadzenCard>
+            <RadzenStack Gap="1rem">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+                    <RadzenIcon Icon="account_tree" Style="font-size: 2rem; color: var(--rz-warning);" />
+                    <RadzenStack Gap="0">
+                        <RadzenText TextStyle="TextStyle.H6" class="rz-mb-0">@(_isLoading ? "..." : "12")</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">Groups</RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenColumn>
+
+    <RadzenColumn Size="12" SizeMD="3">
+        <RadzenCard>
+            <RadzenStack Gap="1rem">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+                    <RadzenIcon Icon="assignment" Style="font-size: 2rem; color: var(--rz-info);" />
+                    <RadzenStack Gap="0">
+                        <RadzenText TextStyle="TextStyle.H6" class="rz-mb-0">@(_isLoading ? "..." : "156")</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">Audit Entries</RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+<!-- Quick Actions -->
+<RadzenRow Gap="2rem" class="rz-mt-4">
+    <RadzenColumn Size="12">
+        <RadzenCard>
+            <RadzenStack Gap="1rem">
+                <RadzenText TextStyle="TextStyle.H5">Quick Actions</RadzenText>
+                
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Wrap="FlexWrap.Wrap">
+                    <RadzenButton Text="Create Configuration"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Icon="add"
+                                  Click="@(() => NavigateToPage("/configurations/create"))" />
+
+                    <RadzenButton Text="View All Configurations"
+                                  ButtonStyle="ButtonStyle.Secondary"
+                                  Icon="list"
+                                  Click="@(() => NavigateToPage("/configurations"))" />
+
+                    <RadzenButton Text="Manage Environments"
+                                  ButtonStyle="ButtonStyle.Success"
+                                  Icon="cloud_queue"
+                                  Click="@(() => NavigateToPage("/environments"))" />
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine("HomeRadzen: OnInitializedAsync called");
+        _isLoading = true;
+        StateHasChanged();
+
+        // Simulate loading data
+        await Task.Delay(1000);
+
+        _isLoading = false;
+        StateHasChanged();
+        Console.WriteLine("HomeRadzen: OnInitializedAsync completed");
+    }
+
+    private void ShowWelcomeMessage()
+    {
+        Console.WriteLine("ShowWelcomeMessage called!");
+        NotificationService.Notify(NotificationSeverity.Success, "Welcome!", "Welcome to Configuration Manager!");
+    }
+
+    private void NavigateToPage(string url)
+    {
+        Console.WriteLine($"NavigateToPage called with url: {url}");
+        NotificationService.Notify(NotificationSeverity.Info, "Navigation", $"Navigating to: {url}");
+        Navigation.NavigateTo(url);
+    }
+
+    private void TestClick()
+    {
+        Console.WriteLine("TestClick called!");
+        NotificationService.Notify(NotificationSeverity.Success, "Test", "Test button clicked successfully!");
+    }
+}
