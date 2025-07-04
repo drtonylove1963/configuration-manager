@@ -7,6 +7,7 @@ public record CreateConfigurationDto(
     string Value,
     ConfigurationValueType ValueType,
     string Description,
+    Guid ApplicationId,
     Guid EnvironmentId,
     Guid? GroupId = null,
     bool IsEncrypted = false,

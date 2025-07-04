@@ -115,6 +115,7 @@ public class ConfigurationService : IConfigurationService
             createDto.Value,
             createDto.ValueType,
             createDto.Description,
+            createDto.ApplicationId,
             createDto.EnvironmentId,
             createdBy,
             createDto.GroupId,

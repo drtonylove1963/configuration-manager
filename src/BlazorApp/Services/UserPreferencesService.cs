@@ -127,6 +127,7 @@ public class UserPreferencesService : IUserPreferencesService
                     value,
                     ConfigurationValueType.String,
                     $"User preference: {key} for {currentUser.Username}",
+                    Guid.NewGuid(), // TODO: Get actual ApplicationId for user preferences
                     environmentId
                 );
 

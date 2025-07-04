@@ -8,6 +8,8 @@ public record ConfigurationDto(
     string Value,
     ConfigurationValueType ValueType,
     string Description,
+    Guid ApplicationId,
+    string ApplicationName,
     Guid EnvironmentId,
     string EnvironmentName,
     Guid? GroupId,

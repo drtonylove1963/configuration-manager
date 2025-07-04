@@ -30,6 +30,8 @@ public static class DependencyInjection
         services.AddScoped<IConfigurationRepository, ConfigurationRepository>();
         services.AddScoped<IEnvironmentRepository, EnvironmentRepository>();
         services.AddScoped<IConfigurationGroupRepository, ConfigurationGroupRepository>();
+        services.AddScoped<IApplicationRepository, ApplicationRepository>();
+        services.AddScoped<IApplicationUserRepository, ApplicationUserRepository>();
 
         // Add Infrastructure Services
         services.AddScoped<IConfigurationCacheService, ConfigurationCacheService>();

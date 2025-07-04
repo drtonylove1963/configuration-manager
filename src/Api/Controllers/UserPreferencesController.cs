@@ -186,6 +186,7 @@ public class UserPreferencesController : BaseApiController
                 value,
                 ConfigurationValueType.String,
                 description,
+                Guid.NewGuid(), // TODO: Get actual ApplicationId for user preferences
                 environmentId
             );
 

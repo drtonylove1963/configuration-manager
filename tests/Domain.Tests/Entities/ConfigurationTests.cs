@@ -14,17 +14,19 @@ public class ConfigurationTests
         var value = "TestValue";
         var valueType = ConfigurationValueType.String;
         var description = "Test Description";
+        var applicationId = Guid.NewGuid();
         var environmentId = Guid.NewGuid();
         var createdBy = "testuser";
 
         // Act
-        var configuration = new Configuration(key, value, valueType, description, environmentId, createdBy);
+        var configuration = new Configuration(key, value, valueType, description, applicationId, environmentId, createdBy);
 
         // Assert
         configuration.Key.Value.Should().Be(key);
         configuration.Value.Value.Should().Be(value);
         configuration.Value.Type.Should().Be(valueType);
         configuration.Description.Should().Be(description);
+        configuration.ApplicationId.Should().Be(applicationId);
         configuration.EnvironmentId.Should().Be(environmentId);
         configuration.CreatedBy.Should().Be(createdBy);
         configuration.IsActive.Should().BeTrue();
@@ -41,13 +43,14 @@ public class ConfigurationTests
         var value = "TestValue";
         var valueType = ConfigurationValueType.String;
         var description = "Test Description";
+        var applicationId = Guid.NewGuid();
         var environmentId = Guid.NewGuid();
         var groupId = Guid.NewGuid();
         var createdBy = "testuser";
 
         // Act
         var configuration = new Configuration(
-            key, value, valueType, description, environmentId, createdBy,
+            key, value, valueType, description, applicationId, environmentId, createdBy,
             groupId, isEncrypted: true, isRequired: true, defaultValue: "default");
 
         // Assert
@@ -168,7 +171,8 @@ public class ConfigurationTests
             "TestValue",
             ConfigurationValueType.String,
             "Test Description",
-            Guid.NewGuid(),
+            Guid.NewGuid(), // ApplicationId
+            Guid.NewGuid(), // EnvironmentId
             "testuser"
         );
     }

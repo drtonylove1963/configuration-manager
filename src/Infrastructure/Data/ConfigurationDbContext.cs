@@ -15,6 +15,12 @@ public class ConfigurationDbContext : DbContext
     public DbSet<Domain.Entities.Environment> Environments { get; set; } = null!;
     public DbSet<ConfigurationGroup> ConfigurationGroups { get; set; } = null!;
     public DbSet<ConfigurationHistory> ConfigurationHistory { get; set; } = null!;
+    public DbSet<User> Users { get; set; } = null!;
+    public DbSet<Role> Roles { get; set; } = null!;
+    public DbSet<UserRole> UserRoles { get; set; } = null!;
+    public DbSet<UserSettings> UserSettings { get; set; } = null!;
+    public DbSet<Domain.Entities.Application> Applications { get; set; } = null!;
+    public DbSet<ApplicationUser> ApplicationUsers { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -65,11 +71,17 @@ public class ConfigurationDbContext : DbContext
                 .HasForeignKey(e => e.GroupId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            entity.HasOne(e => e.Application)
+                .WithMany(a => a.Configurations)
+                .HasForeignKey(e => e.ApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             // Configure indexes
-            entity.HasIndex(e => new { e.Key, e.EnvironmentId })
+            entity.HasIndex(e => new { e.Key, e.ApplicationId, e.EnvironmentId })
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
 
+            entity.HasIndex(e => e.ApplicationId);
             entity.HasIndex(e => e.EnvironmentId);
             entity.HasIndex(e => e.GroupId);
             entity.HasIndex(e => e.IsActive);
@@ -168,10 +180,219 @@ public class ConfigurationDbContext : DbContext
             entity.ToTable("ConfigurationHistory");
         });
 
+        // Configure User entity
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+
+            entity.Property(e => e.Username).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Email).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.PasswordHash).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.FirstName).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.LastName).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.RefreshToken).HasMaxLength(500);
+            entity.Property(e => e.CreatedBy).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            entity.Property(e => e.DeletedBy).HasMaxLength(100);
+
+            // Configure indexes
+            entity.HasIndex(e => e.Username)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+
+            entity.HasIndex(e => e.Email)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+
+            entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.IsDeleted);
+
+            // Configure table name
+            entity.ToTable("Users");
+        });
+
+        // Configure Role entity
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+
+            entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.CreatedBy).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            entity.Property(e => e.DeletedBy).HasMaxLength(100);
+
+            // Configure indexes
+            entity.HasIndex(e => e.Name)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+
+            entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.IsDeleted);
+
+            // Configure table name
+            entity.ToTable("Roles");
+        });
+
+        // Configure UserRole entity
+        modelBuilder.Entity<UserRole>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+
+            entity.Property(e => e.AssignedBy).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.CreatedBy).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            entity.Property(e => e.DeletedBy).HasMaxLength(100);
+
+            // Configure relationships
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(e => e.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure indexes
+            entity.HasIndex(e => new { e.UserId, e.RoleId })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.RoleId);
+            entity.HasIndex(e => e.IsDeleted);
+
+            // Configure table name
+            entity.ToTable("UserRoles");
+        });
+
+        // Configure UserSettings entity
+        modelBuilder.Entity<UserSettings>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+
+            entity.Property(e => e.ThemeMode).HasMaxLength(10).IsRequired();
+            entity.Property(e => e.LastSelectedDatabase).HasMaxLength(200);
+            entity.Property(e => e.DefaultLanguage).HasMaxLength(10);
+            entity.Property(e => e.TimeZone).HasMaxLength(100);
+            entity.Property(e => e.CustomSettings).HasMaxLength(4000); // JSON
+            entity.Property(e => e.CreatedBy).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            entity.Property(e => e.DeletedBy).HasMaxLength(100);
+
+            // Configure relationships
+            entity.HasOne(e => e.User)
+                .WithOne()
+                .HasForeignKey<UserSettings>(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.LastSelectedEnvironment)
+                .WithMany()
+                .HasForeignKey(e => e.LastSelectedEnvironmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure indexes
+            entity.HasIndex(e => e.UserId)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+
+            entity.HasIndex(e => e.IsDeleted);
+
+            // Configure table name
+            entity.ToTable("UserSettings");
+        });
+
+        // Configure Application entity
+        modelBuilder.Entity<Domain.Entities.Application>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+
+            entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.ApplicationKey).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.ConnectionString).HasMaxLength(1000);
+            entity.Property(e => e.Version).HasMaxLength(50);
+            entity.Property(e => e.Owner).HasMaxLength(100);
+            entity.Property(e => e.TechnicalContact).HasMaxLength(100);
+            entity.Property(e => e.CreatedBy).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            entity.Property(e => e.DeletedBy).HasMaxLength(100);
+
+            // Configure indexes
+            entity.HasIndex(e => e.Name)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+
+            entity.HasIndex(e => e.ApplicationKey)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+
+            entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.IsDeleted);
+
+            // Configure table name
+            entity.ToTable("Applications");
+        });
+
+        // Configure ApplicationUser entity
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+
+            entity.Property(e => e.AssignedBy).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.CreatedBy).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            entity.Property(e => e.DeletedBy).HasMaxLength(100);
+
+            // Configure relationships
+            entity.HasOne(e => e.Application)
+                .WithMany(a => a.ApplicationUsers)
+                .HasForeignKey(e => e.ApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Role)
+                .WithMany()
+                .HasForeignKey(e => e.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure indexes
+            entity.HasIndex(e => new { e.ApplicationId, e.UserId })
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+
+            entity.HasIndex(e => e.ApplicationId);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.RoleId);
+            entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => e.IsDeleted);
+
+            // Configure table name
+            entity.ToTable("ApplicationUsers");
+        });
+
         // Configure global query filters for soft delete
         modelBuilder.Entity<Configuration>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Domain.Entities.Environment>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<ConfigurationGroup>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<User>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<Role>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<UserRole>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<UserSettings>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<Domain.Entities.Application>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<ApplicationUser>().HasQueryFilter(e => !e.IsDeleted);
     }
 
     public override int SaveChanges()

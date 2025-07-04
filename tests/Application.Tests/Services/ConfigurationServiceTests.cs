@@ -88,6 +88,7 @@ public class ConfigurationServiceTests
             "TestValue",
             ConfigurationValueType.String,
             "Test Description",
+            Guid.NewGuid(), // ApplicationId
             environmentId);
 
         var configuration = CreateTestConfiguration();
@@ -122,12 +123,14 @@ public class ConfigurationServiceTests
     public async Task CreateAsync_WithNonExistingEnvironment_ShouldThrowEnvironmentNotFoundException()
     {
         // Arrange
+        var applicationId = Guid.NewGuid();
         var environmentId = Guid.NewGuid();
         var createDto = new CreateConfigurationDto(
             "TestKey",
             "TestValue",
             ConfigurationValueType.String,
             "Test Description",
+            applicationId,
             environmentId);
 
         _environmentRepositoryMock
@@ -143,6 +146,7 @@ public class ConfigurationServiceTests
     public async Task CreateAsync_WithExistingKey_ShouldThrowConfigurationAlreadyExistsException()
     {
         // Arrange
+        var applicationId = Guid.NewGuid();
         var environmentId = Guid.NewGuid();
         var environment = CreateTestEnvironment(environmentId);
         var createDto = new CreateConfigurationDto(
@@ -150,6 +154,7 @@ public class ConfigurationServiceTests
             "TestValue",
             ConfigurationValueType.String,
             "Test Description",
+            applicationId,
             environmentId);
 
         _environmentRepositoryMock
@@ -225,7 +230,8 @@ public class ConfigurationServiceTests
             "TestValue",
             ConfigurationValueType.String,
             "Test Description",
-            Guid.NewGuid(),
+            Guid.NewGuid(), // ApplicationId
+            Guid.NewGuid(), // EnvironmentId
             "testuser");
 
         if (id.HasValue)
@@ -246,8 +252,10 @@ public class ConfigurationServiceTests
             "TestValue",
             ConfigurationValueType.String,
             "Test Description",
-            Guid.NewGuid(),
-            "TestEnvironment",
+            Guid.NewGuid(), // ApplicationId
+            "TestApplication", // ApplicationName
+            Guid.NewGuid(), // EnvironmentId
+            "TestEnvironment", // EnvironmentName
             null,
             null,
             false,

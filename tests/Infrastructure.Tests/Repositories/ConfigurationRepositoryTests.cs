@@ -39,6 +39,7 @@ public class ConfigurationRepositoryTests : IDisposable
             "TestValue",
             ConfigurationValueType.String,
             "Test Description",
+            Guid.NewGuid(), // ApplicationId
             environment.Id,
             "testuser");
 
@@ -64,6 +65,7 @@ public class ConfigurationRepositoryTests : IDisposable
             "TestValue",
             ConfigurationValueType.String,
             "Test Description",
+            Guid.NewGuid(), // ApplicationId
             environment.Id,
             "testuser");
 
@@ -105,6 +107,7 @@ public class ConfigurationRepositoryTests : IDisposable
             "TestValue",
             ConfigurationValueType.String,
             "Test Description",
+            Guid.NewGuid(), // ApplicationId
             environment.Id,
             "testuser");
 
@@ -128,9 +131,10 @@ public class ConfigurationRepositoryTests : IDisposable
         var environment2 = new Domain.Entities.Environment("Test2", "Test Environment 2", "testuser");
         await _context.Environments.AddRangeAsync(environment1, environment2);
 
-        var config1 = new Configuration("Key1", "Value1", ConfigurationValueType.String, "Desc1", environment1.Id, "testuser");
-        var config2 = new Configuration("Key2", "Value2", ConfigurationValueType.String, "Desc2", environment1.Id, "testuser");
-        var config3 = new Configuration("Key3", "Value3", ConfigurationValueType.String, "Desc3", environment2.Id, "testuser");
+        var applicationId = Guid.NewGuid();
+        var config1 = new Configuration("Key1", "Value1", ConfigurationValueType.String, "Desc1", applicationId, environment1.Id, "testuser");
+        var config2 = new Configuration("Key2", "Value2", ConfigurationValueType.String, "Desc2", applicationId, environment1.Id, "testuser");
+        var config3 = new Configuration("Key3", "Value3", ConfigurationValueType.String, "Desc3", applicationId, environment2.Id, "testuser");
 
         await _context.Configurations.AddRangeAsync(config1, config2, config3);
         await _context.SaveChangesAsync();
@@ -155,6 +159,7 @@ public class ConfigurationRepositoryTests : IDisposable
             "TestValue",
             ConfigurationValueType.String,
             "Test Description",
+            Guid.NewGuid(), // ApplicationId
             environment.Id,
             "testuser");
 
@@ -195,6 +200,7 @@ public class ConfigurationRepositoryTests : IDisposable
             "TestValue",
             ConfigurationValueType.String,
             "Test Description",
+            Guid.NewGuid(), // ApplicationId
             environment.Id,
             "testuser");
 

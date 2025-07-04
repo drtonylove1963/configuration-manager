@@ -9,6 +9,7 @@ public class Configuration : BaseEntity
     public ConfigurationKey Key { get; private set; } = null!;
     public ConfigurationValue Value { get; private set; } = null!;
     public string Description { get; private set; } = string.Empty;
+    public Guid ApplicationId { get; private set; } // Multi-tenant: Configuration belongs to Application
     public Guid EnvironmentId { get; private set; }
     public Guid? GroupId { get; private set; }
     public bool IsEncrypted { get; private set; }
@@ -18,6 +19,7 @@ public class Configuration : BaseEntity
     public int Version { get; private set; } = 1;
 
     // Navigation properties
+    public Application Application { get; private set; } = null!;
     public Environment Environment { get; private set; } = null!;
     public ConfigurationGroup? Group { get; private set; }
 
@@ -27,10 +29,11 @@ public class Configuration : BaseEntity
     private Configuration() { } // For EF Core
 
     public Configuration(
-        string key, 
-        string value, 
+        string key,
+        string value,
         ConfigurationValueType valueType,
         string description,
+        Guid applicationId,
         Guid environmentId,
         string createdBy,
         Guid? groupId = null,
@@ -44,6 +47,7 @@ public class Configuration : BaseEntity
             Key = key,
             Value = value,
             Description = description,
+            ApplicationId = applicationId,
             EnvironmentId = environmentId
         };
 
@@ -56,6 +60,7 @@ public class Configuration : BaseEntity
         Key = ConfigurationKey.Create(key);
         Value = ConfigurationValue.Create(value, valueType);
         Description = description;
+        ApplicationId = applicationId;
         EnvironmentId = environmentId;
         GroupId = groupId;
         IsEncrypted = isEncrypted;
@@ -122,6 +127,7 @@ public class ConfigurationValidationData
     public string Key { get; set; } = string.Empty;
     public string Value { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+    public Guid ApplicationId { get; set; }
     public Guid EnvironmentId { get; set; }
 }
 
@@ -140,6 +146,10 @@ public class ConfigurationValidator : AbstractValidator<ConfigurationValidationD
         RuleFor(x => x.Description)
             .MaximumLength(1000)
             .WithMessage("Configuration description cannot exceed 1000 characters");
+
+        RuleFor(x => x.ApplicationId)
+            .NotEmpty()
+            .WithMessage("Application ID is required");
 
         RuleFor(x => x.EnvironmentId)
             .NotEmpty()

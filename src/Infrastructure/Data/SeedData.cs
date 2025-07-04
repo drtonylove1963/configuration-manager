@@ -31,6 +31,21 @@ public static class SeedData
                 logger.LogInformation("Database ensured to exist");
             }
 
+            // Seed Applications
+            if (!await context.Applications.AnyAsync())
+            {
+                var applications = new[]
+                {
+                    new Domain.Entities.Application("Default Application", "Default application for configuration management", "system"),
+                    new Domain.Entities.Application("Sample App", "Sample application for demonstration", "system"),
+                    new Domain.Entities.Application("Test Application", "Application used for testing purposes", "system")
+                };
+
+                await context.Applications.AddRangeAsync(applications);
+                await context.SaveChangesAsync();
+                logger.LogInformation("Seeded {Count} applications", applications.Length);
+            }
+
             // Seed Environments
             if (!await context.Environments.AnyAsync())
             {
@@ -79,9 +94,11 @@ public static class SeedData
             // Seed Sample Configurations
             if (!await context.Configurations.AnyAsync())
             {
+                var applications = await context.Applications.ToListAsync();
                 var environments = await context.Environments.ToListAsync();
                 var groups = await context.ConfigurationGroups.ToListAsync();
 
+                var defaultApplication = applications.First(a => a.Name == "Default Application");
                 var databaseGroup = groups.First(g => g.Name == "Database");
                 var apiGroup = groups.First(g => g.Name == "API");
                 var securityGroup = groups.First(g => g.Name == "Security");
@@ -99,6 +116,7 @@ public static class SeedData
                             GetConnectionStringForEnvironment(env.Name),
                             ConfigurationValueType.String,
                             "Main database connection string",
+                            defaultApplication.Id,
                             env.Id,
                             "system",
                             connectionStringsGroup.Id,
@@ -110,6 +128,7 @@ public static class SeedData
                             "30",
                             ConfigurationValueType.Integer,
                             "Database command timeout in seconds",
+                            defaultApplication.Id,
                             env.Id,
                             "system",
                             databaseGroup.Id,
@@ -123,6 +142,7 @@ public static class SeedData
                             GetApiUrlForEnvironment(env.Name),
                             ConfigurationValueType.String,
                             "Base URL for the API",
+                            defaultApplication.Id,
                             env.Id,
                             "system",
                             apiGroup.Id,
@@ -134,6 +154,7 @@ public static class SeedData
                             "60",
                             ConfigurationValueType.Integer,
                             "API request timeout in seconds",
+                            defaultApplication.Id,
                             env.Id,
                             "system",
                             apiGroup.Id,
@@ -147,6 +168,7 @@ public static class SeedData
                             GenerateJwtSecret(),
                             ConfigurationValueType.String,
                             "JWT signing secret",
+                            defaultApplication.Id,
                             env.Id,
                             "system",
                             securityGroup.Id,
@@ -158,6 +180,7 @@ public static class SeedData
                             env.Name == "Production" ? "60" : "480",
                             ConfigurationValueType.Integer,
                             "JWT token expiry time in minutes",
+                            defaultApplication.Id,
                             env.Id,
                             "system",
                             securityGroup.Id,
@@ -171,6 +194,7 @@ public static class SeedData
                             "true",
                             ConfigurationValueType.Boolean,
                             "Enable audit logging feature",
+                            defaultApplication.Id,
                             env.Id,
                             "system",
                             null,
@@ -182,6 +206,7 @@ public static class SeedData
                             env.Name == "Production" ? "true" : "false",
                             ConfigurationValueType.Boolean,
                             "Enable caching feature",
+                            defaultApplication.Id,
                             env.Id,
                             "system",
                             null,

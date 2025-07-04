@@ -14,6 +14,7 @@ public class ConfigurationMappingProfile : Profile
             .ForMember(dest => dest.Key, opt => opt.MapFrom(src => src.Key.Value))
             .ForMember(dest => dest.Value, opt => opt.MapFrom(src => src.Value.Value))
             .ForMember(dest => dest.ValueType, opt => opt.MapFrom(src => src.Value.Type))
+            .ForMember(dest => dest.ApplicationName, opt => opt.MapFrom(src => src.Application.Name))
             .ForMember(dest => dest.EnvironmentName, opt => opt.MapFrom(src => src.Environment.Name))
             .ForMember(dest => dest.GroupName, opt => opt.MapFrom(src => src.Group != null ? src.Group.Name : null));
 
