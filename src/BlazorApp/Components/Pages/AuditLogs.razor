@@ -220,11 +220,11 @@
         _loading = true;
         try
         {
-            // TODO: Implement actual API call
+            // TODO: Implement actual API call when AuditClient is available
             // _auditLogs = (await AuditClient.GetAllAsync(_limitFilter)).ToList();
 
-            // Mock data for demonstration
-            _auditLogs = GenerateMockAuditLogs();
+            // For now, initialize empty list until API is implemented
+            _auditLogs = new List<AuditLog>();
 
             // Apply client-side filtering
             if (!string.IsNullOrWhiteSpace(_entityTypeFilter))
@@ -276,25 +276,5 @@
         _showChangesDialog = true;
     }
 
-    private List<AuditLog> GenerateMockAuditLogs()
-    {
-        // Mock data for demonstration
-        return new List<AuditLog>
-        {
-            new AuditLog
-            {
-                Id = Guid.NewGuid().ToString(),
-                EntityId = Guid.NewGuid(),
-                EntityType = "Configuration",
-                Action = "Create",
-                UserName = "admin",
-                UserId = "admin@example.com",
-                Timestamp = DateTime.UtcNow.AddMinutes(-30),
-                IpAddress = "192.168.1.100",
-                UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                Changes = new Dictionary<string, object> { { "Key", "DatabaseConnection" }, { "Value", "Server=localhost;..." } },
-                Metadata = new Dictionary<string, object> { { "Source", "Web UI" } }
-            }
-        };
-    }
+
 }

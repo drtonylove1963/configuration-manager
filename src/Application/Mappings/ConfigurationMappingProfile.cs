@@ -11,29 +11,81 @@ public class ConfigurationMappingProfile : Profile
     public ConfigurationMappingProfile()
     {
         CreateMap<Configuration, ConfigurationDto>()
-            .ForMember(dest => dest.Key, opt => opt.MapFrom(src => src.Key.Value))
-            .ForMember(dest => dest.Value, opt => opt.MapFrom(src => src.Value.Value))
-            .ForMember(dest => dest.ValueType, opt => opt.MapFrom(src => src.Value.Type))
-            .ForMember(dest => dest.ApplicationName, opt => opt.MapFrom(src => src.Application.Name))
-            .ForMember(dest => dest.EnvironmentName, opt => opt.MapFrom(src => src.Environment.Name))
-            .ForMember(dest => dest.GroupName, opt => opt.MapFrom(src => src.Group != null ? src.Group.Name : null));
+            .ConstructUsing(src => new ConfigurationDto(
+                src.Id,
+                src.Key.Value,
+                src.Value.Value,
+                src.Value.Type,
+                src.Description,
+                src.ApplicationId,
+                src.Application != null ? src.Application.Name : "Unknown",
+                src.EnvironmentId,
+                src.Environment != null ? src.Environment.Name : "Unknown",
+                src.GroupId,
+                src.Group != null ? src.Group.Name : null,
+                src.IsEncrypted,
+                src.IsRequired,
+                src.DefaultValue,
+                src.IsActive,
+                src.Version,
+                src.CreatedAt,
+                src.UpdatedAt,
+                src.CreatedBy,
+                src.UpdatedBy));
 
         CreateMap<ConfigurationHistory, ConfigurationHistoryDto>();
 
         CreateMap<Domain.Entities.Environment, EnvironmentDto>()
-            .ForMember(dest => dest.ConfigurationCount, opt => opt.MapFrom(src => src.Configurations.Count));
+            .ConstructUsing(src => new EnvironmentDto(
+                src.Id,
+                src.Name,
+                src.Description,
+                src.IsActive,
+                src.SortOrder,
+                src.CreatedAt,
+                src.UpdatedAt,
+                src.CreatedBy,
+                src.UpdatedBy,
+                src.Configurations.Count));
 
         CreateMap<Domain.Entities.Environment, EnvironmentSummaryDto>()
-            .ForMember(dest => dest.ConfigurationCount, opt => opt.MapFrom(src => src.Configurations.Count))
-            .ForMember(dest => dest.LastUpdated, opt => opt.MapFrom(src => src.UpdatedAt ?? src.CreatedAt));
+            .ConstructUsing(src => new EnvironmentSummaryDto(
+                src.Id,
+                src.Name,
+                src.Description,
+                src.IsActive,
+                src.Configurations.Count,
+                src.UpdatedAt != null ? src.UpdatedAt.Value : src.CreatedAt));
 
         CreateMap<ConfigurationGroup, ConfigurationGroupDto>()
-            .ForMember(dest => dest.ParentGroupName, opt => opt.MapFrom(src => src.ParentGroupId != null ? "Parent Group" : null)) // This would need proper navigation
-            .ForMember(dest => dest.ConfigurationCount, opt => opt.MapFrom(src => src.Configurations.Count))
-            .ForMember(dest => dest.ChildGroupCount, opt => opt.MapFrom(src => src.ChildGroups.Count));
+            .ConstructUsing(src => new ConfigurationGroupDto(
+                src.Id,
+                src.Name,
+                src.Description,
+                src.ParentGroupId,
+                null, // ParentGroupName - would need proper navigation
+                src.IsActive,
+                src.SortOrder,
+                src.CreatedAt,
+                src.UpdatedAt,
+                src.CreatedBy,
+                src.UpdatedBy,
+                src.Configurations.Count,
+                src.ChildGroups.Count));
 
         CreateMap<ConfigurationGroup, ConfigurationGroupTreeDto>()
-            .ForMember(dest => dest.ConfigurationCount, opt => opt.MapFrom(src => src.Configurations.Count))
-            .ForMember(dest => dest.Children, opt => opt.MapFrom(src => src.ChildGroups));
+            .ConstructUsing(src => new ConfigurationGroupTreeDto(
+                src.Id,
+                src.Name,
+                src.Description,
+                src.IsActive,
+                src.Configurations.Count,
+                src.ChildGroups.Select(child => new ConfigurationGroupTreeDto(
+                    child.Id,
+                    child.Name,
+                    child.Description,
+                    child.IsActive,
+                    child.Configurations.Count,
+                    new List<ConfigurationGroupTreeDto>())).ToList()));
     }
 }

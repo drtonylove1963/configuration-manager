@@ -241,14 +241,12 @@
 
     private void EditConfiguration()
     {
-        NotificationService.Notify(NotificationSeverity.Info, "Debug", "Edit button clicked!");
-        // Navigation.NavigateTo($"/configurations/{Id}/edit");
+        Navigation.NavigateTo($"/configurations/{Id}/edit");
     }
 
     private void ViewHistory()
     {
-        NotificationService.Notify(NotificationSeverity.Info, "Debug", "History button clicked!");
-        // Navigation.NavigateTo($"/configurations/{Id}/history");
+        Navigation.NavigateTo($"/configurations/{Id}/history");
     }
 
     private void TestClick()

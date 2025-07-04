@@ -31,17 +31,7 @@ public class ConfigurationsController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving all configurations");
-
-            // Return sample data if database is not available
-            var sampleConfigurations = new List<ConfigurationDto>
-            {
-                new ConfigurationDto(Guid.NewGuid(), "DatabaseConnectionString", "Server=localhost;Database=MyApp;", Domain.ValueObjects.ConfigurationValueType.String, "Connection string for the main database", Guid.NewGuid(), "Sample App", Guid.NewGuid(), "Development", Guid.NewGuid(), "Database", false, true, null, true, 1, DateTime.UtcNow, DateTime.UtcNow, "system", "system"),
-                new ConfigurationDto(Guid.NewGuid(), "ApiTimeout", "30", Domain.ValueObjects.ConfigurationValueType.Integer, "Timeout for API calls in seconds", Guid.NewGuid(), "Sample App", Guid.NewGuid(), "Development", Guid.NewGuid(), "API", false, true, "30", true, 1, DateTime.UtcNow, DateTime.UtcNow, "system", "system"),
-                new ConfigurationDto(Guid.NewGuid(), "FeatureFlag_NewUI", "true", Domain.ValueObjects.ConfigurationValueType.Boolean, "Enable new UI features", Guid.NewGuid(), "Sample App", Guid.NewGuid(), "Development", Guid.NewGuid(), "Features", false, false, "false", true, 1, DateTime.UtcNow, DateTime.UtcNow, "system", "system")
-            };
-
-            _logger.LogWarning("Database unavailable, returning sample data");
-            return Ok(sampleConfigurations);
+            return HandleException(ex);
         }
     }
 

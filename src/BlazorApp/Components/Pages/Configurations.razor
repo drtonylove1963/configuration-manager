@@ -10,11 +10,24 @@
 @inject IConfigurationGroupApiClient GroupClient
 @inject NotificationService NotificationService
 @inject NavigationManager Navigation
+@inject DialogService DialogService
 
 <PageTitle>Configurations</PageTitle>
 
 <div class="rz-p-4">
-    <RadzenText TextStyle="TextStyle.H4" class="rz-mb-4">Configuration Management</RadzenText>
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" class="rz-mb-4">
+        <RadzenText TextStyle="TextStyle.H4">Configuration Management</RadzenText>
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+            <RadzenButton Text="Test Dialog"
+                          ButtonStyle="ButtonStyle.Warning"
+                          Icon="bug_report"
+                          Click="@TestDialog" />
+            <RadzenButton Text="Create Configuration"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Icon="add"
+                          Click="@(() => Navigation.NavigateTo("/configurations/create"))" />
+        </RadzenStack>
+    </RadzenStack>
 
     <RadzenCard class="rz-mb-4">
         <RadzenStack Gap="1rem">
@@ -108,21 +121,48 @@
                         <RadzenButton ButtonStyle="ButtonStyle.Light"
                                       Icon="edit"
                                       Size="ButtonSize.Small"
-                                      Click="@(() => EditConfiguration(config.Id))" />
+                                      Click="@((args) => EditConfiguration(config.Id))"
+                                      @onclick:stopPropagation="true" />
                         <RadzenButton ButtonStyle="ButtonStyle.Light"
                                       Icon="history"
                                       Size="ButtonSize.Small"
-                                      Click="@(() => ViewHistory(config.Id))" />
+                                      Click="@((args) => ViewHistory(config.Id))"
+                                      @onclick:stopPropagation="true" />
                         <RadzenButton ButtonStyle="ButtonStyle.Danger"
                                       Icon="delete"
                                       Size="ButtonSize.Small"
-                                      Click="@(() => DeleteConfiguration(config))" />
+                                      Click="@((args) => ShowDeleteConfirmation(config))"
+                                      @onclick:stopPropagation="true" />
                     </RadzenStack>
                 </Template>
             </RadzenDataGridColumn>
         </Columns>
     </RadzenDataGrid>
 </div>
+
+<!-- Delete Confirmation Dialog -->
+@if (_showDeleteDialog && _configurationToDelete != null)
+{
+    <div class="modal-backdrop" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1050; display: flex; align-items: center; justify-content: center;">
+        <RadzenCard style="max-width: 500px; width: 90%; z-index: 1051;">
+            <RadzenStack Gap="1rem">
+                <RadzenText TextStyle="TextStyle.H6">Delete Configuration</RadzenText>
+                <RadzenText>
+                    Are you sure you want to delete the configuration '<strong>@_configurationToDelete.Key</strong>'?
+                    This action cannot be undone.
+                </RadzenText>
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                    <RadzenButton Text="Cancel"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Click="@CancelDelete" />
+                    <RadzenButton Text="Delete"
+                                  ButtonStyle="ButtonStyle.Danger"
+                                  Click="@ConfirmDelete" />
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+    </div>
+}
 
 @code {
     private RadzenDataGrid<ConfigurationDto>? _dataGrid;
@@ -133,194 +173,56 @@
     private string _searchTerm = string.Empty;
     private Guid? _selectedEnvironmentId;
     private Guid? _selectedGroupId;
+    private bool _showDeleteDialog = false;
+    private ConfigurationDto? _configurationToDelete;
 
     protected override async Task OnInitializedAsync()
     {
+        Console.WriteLine("Configurations page OnInitializedAsync called");
         await LoadData();
+        Console.WriteLine("Configurations page LoadData completed");
     }
 
     private async Task LoadData()
     {
+        Console.WriteLine("LoadData method started");
         _loading = true;
         try
         {
-            // Mock data for demonstration
-            var devEnvId = Guid.NewGuid();
-            var stagingEnvId = Guid.NewGuid();
-            var prodEnvId = Guid.NewGuid();
+            Console.WriteLine("Making API calls...");
+            // Load real data from API
+            var configurationsTask = ConfigurationClient.GetAllAsync();
+            var environmentsTask = EnvironmentClient.GetAllAsync();
+            var groupsTask = GroupClient.GetAllAsync();
 
-            _environments = new List<EnvironmentDto>
+            await Task.WhenAll(configurationsTask, environmentsTask, groupsTask);
+
+            _configurations = (await configurationsTask).ToList();
+            _environments = (await environmentsTask).ToList();
+            _groups = (await groupsTask).ToList();
+
+            Console.WriteLine($"Data loaded: {_configurations.Count} configurations, {_environments.Count} environments, {_groups.Count} groups");
+
+            // If no data loaded, show a notification
+            if (_configurations.Count == 0)
             {
-                new(
-                    Id: devEnvId,
-                    Name: "Development",
-                    Description: "Development environment for testing new features",
-                    IsActive: true,
-                    SortOrder: 1,
-                    CreatedAt: DateTime.UtcNow.AddDays(-30),
-                    UpdatedAt: null,
-                    CreatedBy: "system",
-                    UpdatedBy: null,
-                    ConfigurationCount: 0
-                ),
-                new(
-                    Id: stagingEnvId,
-                    Name: "Staging",
-                    Description: "Staging environment for pre-production testing",
-                    IsActive: true,
-                    SortOrder: 2,
-                    CreatedAt: DateTime.UtcNow.AddDays(-25),
-                    UpdatedAt: null,
-                    CreatedBy: "system",
-                    UpdatedBy: null,
-                    ConfigurationCount: 0
-                ),
-                new(
-                    Id: prodEnvId,
-                    Name: "Production",
-                    Description: "Production environment for live applications",
-                    IsActive: true,
-                    SortOrder: 3,
-                    CreatedAt: DateTime.UtcNow.AddDays(-20),
-                    UpdatedAt: null,
-                    CreatedBy: "system",
-                    UpdatedBy: null,
-                    ConfigurationCount: 0
-                )
-            };
-
-            var dbGroupId = Guid.NewGuid();
-            var apiGroupId = Guid.NewGuid();
-            var uiGroupId = Guid.NewGuid();
-
-            _groups = new List<ConfigurationGroupDto>
-            {
-                new(
-                    Id: dbGroupId,
-                    Name: "Database",
-                    Description: "Database connection and configuration settings",
-                    ParentGroupId: null,
-                    ParentGroupName: null,
-                    IsActive: true,
-                    SortOrder: 1,
-                    CreatedAt: DateTime.UtcNow.AddDays(-15),
-                    UpdatedAt: null,
-                    CreatedBy: "system",
-                    UpdatedBy: null,
-                    ConfigurationCount: 0,
-                    ChildGroupCount: 0
-                ),
-                new(
-                    Id: apiGroupId,
-                    Name: "API",
-                    Description: "API configuration and timeout settings",
-                    ParentGroupId: null,
-                    ParentGroupName: null,
-                    IsActive: true,
-                    SortOrder: 2,
-                    CreatedAt: DateTime.UtcNow.AddDays(-10),
-                    UpdatedAt: null,
-                    CreatedBy: "system",
-                    UpdatedBy: null,
-                    ConfigurationCount: 0,
-                    ChildGroupCount: 0
-                ),
-                new(
-                    Id: uiGroupId,
-                    Name: "UI",
-                    Description: "User interface configuration settings",
-                    ParentGroupId: null,
-                    ParentGroupName: null,
-                    IsActive: true,
-                    SortOrder: 3,
-                    CreatedAt: DateTime.UtcNow.AddDays(-5),
-                    UpdatedAt: null,
-                    CreatedBy: "system",
-                    UpdatedBy: null,
-                    ConfigurationCount: 0,
-                    ChildGroupCount: 0
-                )
-            };
-
-            _configurations = new List<ConfigurationDto>
-            {
-                new(
-                    Id: Guid.NewGuid(),
-                    Key: "ConnectionString",
-                    Value: "Server=localhost;Database=Test;Integrated Security=true;",
-                    ValueType: ConfigurationValueType.String,
-                    Description: "Main database connection string",
-                    ApplicationId: Guid.NewGuid(),
-                    ApplicationName: "Sample App",
-                    EnvironmentId: devEnvId,
-                    EnvironmentName: "Development",
-                    GroupId: dbGroupId,
-                    GroupName: "Database",
-                    IsEncrypted: false,
-                    IsRequired: true,
-                    DefaultValue: null,
-                    IsActive: true,
-                    Version: 1,
-                    CreatedAt: DateTime.UtcNow.AddDays(-7),
-                    UpdatedAt: null,
-                    CreatedBy: "system",
-                    UpdatedBy: null
-                ),
-                new(
-                    Id: Guid.NewGuid(),
-                    Key: "ApiTimeout",
-                    Value: "30",
-                    ValueType: ConfigurationValueType.Integer,
-                    Description: "API request timeout in seconds",
-                    ApplicationId: Guid.NewGuid(),
-                    ApplicationName: "Sample App",
-                    EnvironmentId: prodEnvId,
-                    EnvironmentName: "Production",
-                    GroupId: apiGroupId,
-                    GroupName: "API",
-                    IsEncrypted: false,
-                    IsRequired: false,
-                    DefaultValue: "30",
-                    IsActive: true,
-                    Version: 1,
-                    CreatedAt: DateTime.UtcNow.AddDays(-3),
-                    UpdatedAt: null,
-                    CreatedBy: "system",
-                    UpdatedBy: null
-                ),
-                new(
-                    Id: Guid.NewGuid(),
-                    Key: "ThemeColor",
-                    Value: "blue",
-                    ValueType: ConfigurationValueType.String,
-                    Description: "Primary theme color for the application",
-                    ApplicationId: Guid.NewGuid(),
-                    ApplicationName: "Sample App",
-                    EnvironmentId: stagingEnvId,
-                    EnvironmentName: "Staging",
-                    GroupId: uiGroupId,
-                    GroupName: "UI",
-                    IsEncrypted: false,
-                    IsRequired: false,
-                    DefaultValue: "blue",
-                    IsActive: true,
-                    Version: 1,
-                    CreatedAt: DateTime.UtcNow.AddDays(-1),
-                    UpdatedAt: null,
-                    CreatedBy: "system",
-                    UpdatedBy: null
-                )
-            };
-
-            await ApplyFilters();
+                NotificationService.Notify(NotificationSeverity.Warning, "No Data", "No configurations found in the database");
+            }
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Error in LoadData: {ex.Message}");
             NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error loading data: {ex.Message}");
+
+            // Fallback to empty lists to prevent null reference errors
+            _configurations = new List<ConfigurationDto>();
+            _environments = new List<EnvironmentDto>();
+            _groups = new List<ConfigurationGroupDto>();
         }
         finally
         {
             _loading = false;
+            Console.WriteLine("LoadData method completed");
         }
     }
 
@@ -386,22 +288,94 @@
         Navigation.NavigateTo($"/configurations/{id}/history");
     }
 
-    private async Task DeleteConfiguration(ConfigurationDto configuration)
+    private void ShowDeleteConfirmation(ConfigurationDto configuration)
     {
+        Console.WriteLine($"ShowDeleteConfirmation called for: {configuration.Key}");
+        NotificationService.Notify(NotificationSeverity.Info, "Debug", $"Delete button clicked for '{configuration.Key}'");
+
+        _configurationToDelete = configuration;
+        _showDeleteDialog = true;
+        StateHasChanged();
+    }
+
+    private void CancelDelete()
+    {
+        Console.WriteLine("Delete cancelled");
+        NotificationService.Notify(NotificationSeverity.Info, "Cancelled", "Delete operation cancelled");
+
+        _showDeleteDialog = false;
+        _configurationToDelete = null;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (_configurationToDelete == null) return;
+
         try
         {
-            // For now, just show a confirmation notification since we don't have a dialog service set up
-            NotificationService.Notify(NotificationSeverity.Warning, "Delete Configuration",
-                $"Delete functionality for '{configuration.Key}' would be implemented here");
+            Console.WriteLine($"User confirmed deletion for: {_configurationToDelete.Key}");
 
-            // TODO: Implement actual delete with confirmation dialog
-            // await ConfigurationClient.DeleteAsync(configuration.Id);
-            // NotificationService.Notify(NotificationSeverity.Success, "Success", $"Configuration '{configuration.Key}' deleted successfully");
-            // await LoadData();
+            // Hide dialog first
+            _showDeleteDialog = false;
+            StateHasChanged();
+
+            // Perform the actual delete
+            await ConfigurationClient.DeleteAsync(_configurationToDelete.Id);
+            NotificationService.Notify(NotificationSeverity.Success, "Success",
+                $"Configuration '{_configurationToDelete.Key}' deleted successfully");
+
+            // Clear the reference
+            _configurationToDelete = null;
+
+            // Reload the data to refresh the list
+            await LoadData();
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error deleting configuration: {ex.Message}");
+            Console.WriteLine($"Error in ConfirmDelete: {ex.Message}");
+            NotificationService.Notify(NotificationSeverity.Error, "Error",
+                $"Error deleting configuration: {ex.Message}");
+
+            // Reset dialog state on error
+            _showDeleteDialog = false;
+            _configurationToDelete = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task TestDialog()
+    {
+        try
+        {
+            Console.WriteLine("TestDialog called");
+            NotificationService.Notify(NotificationSeverity.Info, "Debug", "Test Dialog button clicked");
+
+            var confirmed = await DialogService.Confirm(
+                "This is a test dialog. Do you see this message?",
+                "Test Dialog",
+                new ConfirmOptions()
+                {
+                    OkButtonText = "Yes, I see it",
+                    CancelButtonText = "No, I don't see it",
+                    AutoFocusFirstElement = false
+                });
+
+            Console.WriteLine($"Test dialog result: {confirmed}");
+
+            if (confirmed == true)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Success", "Dialog is working correctly!");
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Warning, "Warning", "Dialog might not be visible");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in TestDialog: {ex.Message}");
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error with test dialog: {ex.Message}");
         }
     }
 }

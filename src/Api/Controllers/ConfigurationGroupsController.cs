@@ -31,17 +31,7 @@ public class ConfigurationGroupsController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving all configuration groups");
-
-            // Return sample data if database is not available
-            var sampleGroups = new List<ConfigurationGroupDto>
-            {
-                new ConfigurationGroupDto(Guid.NewGuid(), "Database", "Database related configurations", null, null, true, 1, DateTime.UtcNow, DateTime.UtcNow, "system", "system", 3, 0),
-                new ConfigurationGroupDto(Guid.NewGuid(), "API", "API related configurations", null, null, true, 2, DateTime.UtcNow, DateTime.UtcNow, "system", "system", 2, 0),
-                new ConfigurationGroupDto(Guid.NewGuid(), "Features", "Feature flags and toggles", null, null, true, 3, DateTime.UtcNow, DateTime.UtcNow, "system", "system", 1, 0)
-            };
-
-            _logger.LogWarning("Database unavailable, returning sample data");
-            return Ok(sampleGroups);
+            return HandleException(ex);
         }
     }
 

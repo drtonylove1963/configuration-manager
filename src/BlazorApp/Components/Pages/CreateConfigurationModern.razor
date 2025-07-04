@@ -196,43 +196,24 @@
     {
         try
         {
-            // TODO: Implement actual API calls
-            // var envTask = EnvironmentClient.GetActiveAsync();
-            // var groupTask = GroupClient.GetAllAsync();
-            // await Task.WhenAll(envTask, groupTask);
-            // _environments = (await envTask).ToList();
-            // _groups = (await groupTask).ToList();
-
-            LoadSampleData();
+            // Load real data from API
+            var envTask = EnvironmentClient.GetAllAsync();
+            var groupTask = GroupClient.GetAllAsync();
+            await Task.WhenAll(envTask, groupTask);
+            _environments = (await envTask).ToList();
+            _groups = (await groupTask).ToList();
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(NotificationSeverity.Warning, "Warning", "Database unavailable, using sample data");
-            LoadSampleData();
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error loading data: {ex.Message}");
+            // Initialize empty lists to prevent null reference errors
+            _environments = new List<EnvironmentDto>();
+            _groups = new List<ConfigurationGroupDto>();
         }
     }
 
-    private void LoadSampleData()
-    {
-        // Sample environments
-        _environments = new List<EnvironmentDto>
-        {
-            new(Guid.NewGuid(), "Development", "Development environment", true, 1, DateTime.UtcNow, null, "system", null, 0),
-            new(Guid.NewGuid(), "Staging", "Staging environment", true, 2, DateTime.UtcNow, null, "system", null, 0),
-            new(Guid.NewGuid(), "Production", "Production environment", true, 3, DateTime.UtcNow, null, "system", null, 0)
-        };
 
-        // Sample groups
-        _groups = new List<ConfigurationGroupDto>
-        {
-            new(Guid.NewGuid(), "Database", "Database configuration settings", null, null, true, 1, DateTime.UtcNow, null, "system", null, 0, 0),
-            new(Guid.NewGuid(), "API", "API configuration settings", null, null, true, 2, DateTime.UtcNow, null, "system", null, 0, 0),
-            new(Guid.NewGuid(), "UI", "User interface settings", null, null, true, 3, DateTime.UtcNow, null, "system", null, 0, 0)
-        };
-
-        StateHasChanged();
-    }
 
     private void OnEnvironmentChanged(object value)
     {
