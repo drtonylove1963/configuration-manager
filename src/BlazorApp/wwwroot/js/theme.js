@@ -4,6 +4,13 @@ window.currentTheme = 'light'; // Global variable: 'light' or 'dark'
 window.setTheme = function(mode) {
     console.log('setTheme called with mode:', mode);
 
+    // Check if DOM is ready
+    if (!document.body) {
+        console.log('DOM not ready, deferring theme setting');
+        setTimeout(() => window.setTheme(mode), 100);
+        return;
+    }
+
     // Simple IF statement - only two choices
     if (mode === 'dark') {
         // DARK THEME
@@ -87,15 +94,32 @@ window.toggleTheme = function() {
     console.log('toggleTheme called. Current theme:', window.currentTheme);
     const newTheme = window.currentTheme === 'light' ? 'dark' : 'light';
     window.setTheme(newTheme);
+
+    // Update the theme toggle button icon
+    const themeIcon = document.getElementById('theme-icon');
+    if (themeIcon) {
+        themeIcon.textContent = newTheme === 'dark' ? 'light_mode' : 'dark_mode';
+    }
+
     console.log('Theme toggled to:', newTheme);
     return newTheme;
 };
 
-// Initialize on page load
+// Initialize on page load - wait for DOM to be ready
 (function() {
-    const saved = localStorage.getItem('theme') || 'light';
-    console.log('Initializing theme from localStorage:', saved);
-    window.setTheme(saved);
+    function initializeTheme() {
+        const saved = localStorage.getItem('theme') || 'light';
+        console.log('Initializing theme from localStorage:', saved);
+        window.setTheme(saved);
+    }
+
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeTheme);
+    } else {
+        // DOM is already ready
+        initializeTheme();
+    }
 })();
 
 

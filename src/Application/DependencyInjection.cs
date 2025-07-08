@@ -19,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped<IConfigurationService, ConfigurationService>();
         services.AddScoped<IEnvironmentService, EnvironmentService>();
         services.AddScoped<IConfigurationGroupService, ConfigurationGroupService>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }

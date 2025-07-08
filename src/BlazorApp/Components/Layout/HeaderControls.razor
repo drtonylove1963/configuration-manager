@@ -1,3 +1,4 @@
+
 @rendermode InteractiveServer
 @inject ICurrentUserService CurrentUserService
 @inject NotificationService NotificationService
@@ -16,11 +17,11 @@
 
     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-ml-auto">
         <!-- Theme Toggle -->
-        <RadzenButton Click="@ToggleTheme"
-                     Variant="Variant.Text"
-                     ButtonStyle="ButtonStyle.Light"
-                     Icon="@(ThemeService.CurrentTheme == "dark" ? "light_mode" : "dark_mode")"
-                     title="@(ThemeService.CurrentTheme == "dark" ? "Switch to Light Mode" : "Switch to Dark Mode")" />
+        <button onclick="window.toggleTheme(); return false;"
+                title="Toggle Theme"
+                style="background: none; border: none; color: white; cursor: pointer; padding: 8px; border-radius: 4px;">
+            <i class="material-icons" id="theme-icon">dark_mode</i>
+        </button>
 
         <!-- User Profile -->
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">

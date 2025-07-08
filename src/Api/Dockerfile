@@ -14,6 +14,15 @@ COPY . .
 WORKDIR "/src/src/Api"
 RUN dotnet build "Api.csproj" -c Release -o /app/build
 
+# Development stage
+FROM build AS development
+WORKDIR /app
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+EXPOSE 5021
+ENV ASPNETCORE_URLS=http://+:5021
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENTRYPOINT ["dotnet", "watch", "run", "--project", "/src/src/Api/Api.csproj", "--urls", "http://+:5021"]
+
 # Publish stage
 FROM build AS publish
 RUN dotnet publish "Api.csproj" -c Release -o /app/publish /p:UseAppHost=false

@@ -1,0 +1,248 @@
+@page "/groups/{Id:guid}"
+@rendermode InteractiveServer
+
+@using Client.Services
+@using Application.DTOs.ConfigurationGroup
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IConfigurationGroupApiClient GroupClient
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Group Details</PageTitle>
+
+<div class="rz-p-4">
+    @if (_group != null)
+    {
+        <RadzenBreadCrumb class="rz-mb-4">
+            <RadzenBreadCrumbItem Path="/" Text="Dashboard" />
+            <RadzenBreadCrumbItem Path="/groups" Text="Groups" />
+            <RadzenBreadCrumbItem Text="@_group.Name" />
+        </RadzenBreadCrumb>
+
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Gap="1rem" class="rz-mb-4">
+            <RadzenText TextStyle="TextStyle.H4">@_group.Name</RadzenText>
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                <RadzenButton Text="Edit"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Icon="edit"
+                              Click="@EditGroup" />
+                <RadzenButton Text="Back to List"
+                              ButtonStyle="ButtonStyle.Secondary"
+                              Icon="arrow_back"
+                              Click="@(() => Navigation.NavigateTo("/groups"))" />
+            </RadzenStack>
+        </RadzenStack>
+
+        <RadzenRow Gap="2rem">
+            <RadzenColumn Size="12" SizeMD="8">
+                <RadzenCard>
+                    <RadzenStack Gap="1rem">
+                        <RadzenText TextStyle="TextStyle.H6">Group Information</RadzenText>
+                        
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-secondary">Name</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">@_group.Name</RadzenText>
+                        </RadzenStack>
+
+                        @if (!string.IsNullOrEmpty(_group.Description))
+                        {
+                            <RadzenStack Gap="0.5rem">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-secondary">Description</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1">@_group.Description</RadzenText>
+                            </RadzenStack>
+                        }
+
+                        @if (_parentGroup != null)
+                        {
+                            <RadzenStack Gap="0.5rem">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-secondary">Parent Group</RadzenText>
+                                <RadzenLink Path="@($"/groups/{_parentGroup.Id}")" Text="@_parentGroup.Name" />
+                            </RadzenStack>
+                        }
+
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-secondary">Sort Order</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">@_group.SortOrder</RadzenText>
+                        </RadzenStack>
+
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-secondary">Status</RadzenText>
+                            <RadzenBadge BadgeStyle="@(_group.IsActive ? BadgeStyle.Success : BadgeStyle.Danger)" 
+                                         Text="@(_group.IsActive ? "Active" : "Inactive")" />
+                        </RadzenStack>
+
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-secondary">Created</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">@_group.CreatedAt.ToString("MMM dd, yyyy 'at' h:mm tt")</RadzenText>
+                        </RadzenStack>
+
+                        @if (_group.UpdatedAt.HasValue)
+                        {
+                            <RadzenStack Gap="0.5rem">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-secondary">Last Updated</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1">@_group.UpdatedAt.Value.ToString("MMM dd, yyyy 'at' h:mm tt")</RadzenText>
+                            </RadzenStack>
+                        }
+                    </RadzenStack>
+                </RadzenCard>
+
+                @if (_childGroups.Any())
+                {
+                    <RadzenCard class="rz-mt-4">
+                        <RadzenStack Gap="1rem">
+                            <RadzenText TextStyle="TextStyle.H6">Child Groups</RadzenText>
+                            
+                            <RadzenDataGrid Data="@_childGroups" TItem="ConfigurationGroupDto" AllowPaging="false" AllowSorting="true">
+                                <Columns>
+                                    <RadzenDataGridColumn TItem="ConfigurationGroupDto" Property="Name" Title="Name">
+                                        <Template Context="group">
+                                            <RadzenLink Path="@($"/groups/{group.Id}")" Text="@group.Name" />
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                    <RadzenDataGridColumn TItem="ConfigurationGroupDto" Property="Description" Title="Description" />
+                                    <RadzenDataGridColumn TItem="ConfigurationGroupDto" Property="SortOrder" Title="Sort Order" />
+                                    <RadzenDataGridColumn TItem="ConfigurationGroupDto" Property="IsActive" Title="Status">
+                                        <Template Context="group">
+                                            <RadzenBadge BadgeStyle="@(group.IsActive ? BadgeStyle.Success : BadgeStyle.Danger)" 
+                                                         Text="@(group.IsActive ? "Active" : "Inactive")" />
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                </Columns>
+                            </RadzenDataGrid>
+                        </RadzenStack>
+                    </RadzenCard>
+                }
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="4">
+                <RadzenCard>
+                    <RadzenStack Gap="1rem">
+                        <RadzenText TextStyle="TextStyle.H6">Quick Actions</RadzenText>
+                        
+                        <RadzenButton Text="Edit Group"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Icon="edit"
+                                      Style="width: 100%"
+                                      Click="@EditGroup" />
+
+                        @if (!_group.IsActive)
+                        {
+                            <RadzenButton Text="Activate Group"
+                                          ButtonStyle="ButtonStyle.Success"
+                                          Icon="check_circle"
+                                          Style="width: 100%"
+                                          Click="@ActivateGroup" />
+                        }
+
+                        <RadzenButton Text="Create Child Group"
+                                      ButtonStyle="ButtonStyle.Info"
+                                      Icon="create_new_folder"
+                                      Style="width: 100%"
+                                      Click="@CreateChildGroup" />
+
+                        <RadzenButton Text="View All Groups"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Icon="list"
+                                      Style="width: 100%"
+                                      Click="@(() => Navigation.NavigateTo("/groups"))" />
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+    }
+    else if (_loading)
+    {
+        <RadzenStack Gap="2rem" class="rz-text-align-center rz-p-8">
+            <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+            <RadzenText TextStyle="TextStyle.Body1">Loading group details...</RadzenText>
+        </RadzenStack>
+    }
+    else
+    {
+        <RadzenStack Gap="2rem" class="rz-text-align-center rz-p-8">
+            <RadzenIcon Icon="error" Style="font-size: 4rem; color: var(--rz-danger);" />
+            <RadzenText TextStyle="TextStyle.H5">Group Not Found</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body1">The requested group could not be found.</RadzenText>
+            <RadzenButton Text="Back to Groups"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Icon="arrow_back"
+                          Click="@(() => Navigation.NavigateTo("/groups"))" />
+        </RadzenStack>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private ConfigurationGroupDto? _group;
+    private ConfigurationGroupDto? _parentGroup;
+    private List<ConfigurationGroupDto> _childGroups = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadGroup();
+    }
+
+    private async Task LoadGroup()
+    {
+        _loading = true;
+        try
+        {
+            var groupTask = GroupClient.GetByIdAsync(Id);
+            var allGroupsTask = GroupClient.GetAllAsync();
+
+            await Task.WhenAll(groupTask, allGroupsTask);
+
+            _group = await groupTask;
+            var allGroups = (await allGroupsTask).ToList();
+
+            if (_group != null)
+            {
+                // Find parent group
+                if (_group.ParentGroupId.HasValue)
+                {
+                    _parentGroup = allGroups.FirstOrDefault(g => g.Id == _group.ParentGroupId.Value);
+                }
+
+                // Find child groups
+                _childGroups = allGroups.Where(g => g.ParentGroupId == _group.Id).OrderBy(g => g.SortOrder).ThenBy(g => g.Name).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error loading group: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void EditGroup()
+    {
+        Navigation.NavigateTo($"/groups/{Id}/edit");
+    }
+
+    private async Task ActivateGroup()
+    {
+        if (_group == null) return;
+
+        try
+        {
+            await GroupClient.ActivateAsync(_group.Id);
+            NotificationService.Notify(NotificationSeverity.Success, "Success", $"Group '{_group.Name}' activated successfully");
+            await LoadGroup(); // Reload to get updated status
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error activating group: {ex.Message}");
+        }
+    }
+
+    private void CreateChildGroup()
+    {
+        Navigation.NavigateTo($"/groups/create?parentId={Id}");
+    }
+}

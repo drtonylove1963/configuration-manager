@@ -111,6 +111,11 @@ public class User : BaseEntity
         }
     }
 
+    public void Delete(string deletedBy)
+    {
+        MarkAsDeleted(deletedBy);
+    }
+
     public string FullName => $"{FirstName} {LastName}".Trim();
 }
 

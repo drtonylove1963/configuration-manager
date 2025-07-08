@@ -19,6 +19,10 @@ builder.Host.UseSerilog();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Add authentication
+builder.Services.AddAuthenticationCore();
+builder.Services.AddAuthorizationCore();
+
 // Add Radzen
 builder.Services.AddRadzenComponents();
 
@@ -30,6 +34,9 @@ builder.Services.AddClient(apiBaseUrl);
 builder.Services.AddScoped<BlazorApp.Services.ICurrentUserService, BlazorApp.Services.CurrentUserService>();
 builder.Services.AddScoped<BlazorApp.Services.IUserPreferencesService, BlazorApp.Services.UserPreferencesService>();
 builder.Services.AddScoped<BlazorApp.Services.IThemeService, BlazorApp.Services.ThemeService>();
+
+// Add health checks
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -49,5 +56,8 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AllowAnonymous();
+
+// Map health checks
+app.MapHealthChecks("/health");
 
 app.Run();

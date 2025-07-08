@@ -15,6 +15,15 @@ COPY . .
 WORKDIR "/src/src/BlazorApp"
 RUN dotnet build "BlazorApp.csproj" -c Release -o /app/build
 
+# Development stage
+FROM build AS development
+WORKDIR /app
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+EXPOSE 5216
+ENV ASPNETCORE_URLS=http://+:5216
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENTRYPOINT ["dotnet", "watch", "run", "--project", "/src/src/BlazorApp/BlazorApp.csproj", "--urls", "http://+:5216"]
+
 # Publish stage
 FROM build AS publish
 RUN dotnet publish "BlazorApp.csproj" -c Release -o /app/publish /p:UseAppHost=false

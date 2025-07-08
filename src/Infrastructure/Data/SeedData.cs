@@ -2,6 +2,7 @@ using Domain.Entities;
 using Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using BCrypt.Net;
 
 namespace Infrastructure.Data;
 
@@ -219,6 +220,34 @@ public static class SeedData
                 await context.Configurations.AddRangeAsync(sampleConfigurations);
                 await context.SaveChangesAsync();
                 logger.LogInformation("Seeded {Count} sample configurations", sampleConfigurations.Count);
+            }
+
+            // Seed Users
+            if (!await context.Users.AnyAsync())
+            {
+                var users = new[]
+                {
+                    new User(
+                        "testuser",
+                        "testuser@configmanager.local",
+                        BCrypt.Net.BCrypt.HashPassword("password123", 11),
+                        "Test",
+                        "User",
+                        "system"
+                    ),
+                    new User(
+                        "admin",
+                        "admin@configmanager.local",
+                        BCrypt.Net.BCrypt.HashPassword("password123", 11),
+                        "Admin",
+                        "User",
+                        "system"
+                    )
+                };
+
+                await context.Users.AddRangeAsync(users);
+                await context.SaveChangesAsync();
+                logger.LogInformation("Seeded {Count} test users", users.Length);
             }
 
             logger.LogInformation("Database seeding completed successfully");

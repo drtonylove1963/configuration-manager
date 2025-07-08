@@ -1,7 +1,10 @@
 @page "/groups"
 @rendermode InteractiveServer
+
 @using Client.Services
 @using Application.DTOs.ConfigurationGroup
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject IConfigurationGroupApiClient GroupClient
 @inject NotificationService NotificationService
 @inject NavigationManager Navigation

@@ -1,10 +1,12 @@
 using Application.DTOs.Configuration;
 using Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
 [ApiVersion("1.0")]
+[Authorize]
 public class ConfigurationsController : BaseApiController
 {
     private readonly IConfigurationService _configurationService;

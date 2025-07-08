@@ -1,6 +1,43 @@
-﻿<Router AppAssembly="typeof(Program).Assembly">
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Navigation
+
+<Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        @{
+            // Allow certain pages to be accessed without authentication
+            var allowedPublicPages = new[] { "/", "/home", "/login" };
+            var currentPath = routeData.PageType?.GetCustomAttributes(typeof(RouteAttribute), false)
+                .Cast<RouteAttribute>()
+                .FirstOrDefault()?.Template ?? "/";
+
+            var isPublicPage = allowedPublicPages.Contains(currentPath.ToLower());
+        }
+
+        @if (isPublicPage)
+        {
+            <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        }
+        else
+        {
+            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+                <NotAuthorized Context="authContext">
+                    @if (authContext.User.Identity?.IsAuthenticated != true)
+                    {
+                        <RedirectToLogin />
+                    }
+                    else
+                    {
+                        <LayoutView Layout="typeof(Layout.MainLayout)">
+                            <RadzenStack Gap="2rem" class="rz-p-4">
+                                <RadzenText TextStyle="TextStyle.H3">Access Denied</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1">You don't have permission to access this page.</RadzenText>
+                                <RadzenButton Text="Go Home" ButtonStyle="ButtonStyle.Primary" Click="@(() => Navigation.NavigateTo("/"))" />
+                            </RadzenStack>
+                        </LayoutView>
+                    }
+                </NotAuthorized>
+            </AuthorizeRouteView>
+        }
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
     <NotFound>
@@ -14,5 +51,3 @@
         </LayoutView>
     </NotFound>
 </Router>
-
-@inject NavigationManager Navigation

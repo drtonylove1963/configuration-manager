@@ -1,10 +1,13 @@
 @page "/configurations"
 @rendermode InteractiveServer
+
 @using Client.Services
 @using Application.DTOs.Configuration
 @using Application.DTOs.Environment
 @using Application.DTOs.ConfigurationGroup
 @using Domain.ValueObjects
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject IConfigurationApiClient ConfigurationClient
 @inject IEnvironmentApiClient EnvironmentClient
 @inject IConfigurationGroupApiClient GroupClient

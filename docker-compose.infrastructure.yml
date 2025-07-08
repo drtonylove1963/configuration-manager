@@ -1,0 +1,57 @@
+# Infrastructure Only - Development
+# Run: docker-compose -f docker-compose.infrastructure.yml up -d
+# Then run API and BlazorApp locally with dotnet run
+
+services:
+  sql-server-dev:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: configmanager-sqlserver-dev
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=ConfigManager123!
+      - MSSQL_PID=Express
+    ports:
+      - "1435:1433"
+    volumes:
+      - sqlserver_data_dev:/var/opt/mssql
+    networks:
+      - configmanager-network-dev
+    restart: unless-stopped
+
+  mongo-dev:
+    image: mongo:7.0
+    container_name: configmanager-mongo-dev
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=ConfigManager123!
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongo_data_dev:/data/db
+    networks:
+      - configmanager-network-dev
+    restart: unless-stopped
+
+  rabbitmq-dev:
+    image: rabbitmq:3.12-management
+    container_name: configmanager-rabbitmq-dev
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=ConfigManager123!
+    ports:
+      - "5674:5672"    # AMQP port
+      - "15674:15672"  # Management UI port
+    volumes:
+      - rabbitmq_data_dev:/var/lib/rabbitmq
+    networks:
+      - configmanager-network-dev
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data_dev:
+  mongo_data_dev:
+  rabbitmq_data_dev:
+
+networks:
+  configmanager-network-dev:
+    driver: bridge

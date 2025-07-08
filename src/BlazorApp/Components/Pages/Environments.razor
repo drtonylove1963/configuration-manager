@@ -2,6 +2,8 @@
 @rendermode InteractiveServer
 @using Client.Services
 @using Application.DTOs.Environment
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject IEnvironmentApiClient EnvironmentClient
 @inject NotificationService NotificationService
 @inject NavigationManager Navigation

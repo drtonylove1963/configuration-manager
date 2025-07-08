@@ -1,10 +1,12 @@
 using Infrastructure.MongoDB.Models;
 using Infrastructure.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
 [ApiVersion("1.0")]
+[Authorize]
 public class AuditController : BaseApiController
 {
     private readonly IAuditService _auditService;

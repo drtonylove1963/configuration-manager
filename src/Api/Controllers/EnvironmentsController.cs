@@ -1,10 +1,12 @@
 using Application.DTOs.Environment;
 using Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
 [ApiVersion("1.0")]
+[Authorize]
 public class EnvironmentsController : BaseApiController
 {
     private readonly IEnvironmentService _environmentService;

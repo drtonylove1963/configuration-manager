@@ -1,3 +1,5 @@
+using Application.Interfaces;
+using Application.Settings;
 using Domain.Repositories;
 using Infrastructure.Data;
 using Infrastructure.Messaging;
@@ -26,16 +28,22 @@ public static class DependencyInjection
         services.Configure<RabbitMqSettings>(configuration.GetSection("RabbitMQ"));
         services.AddSingleton<IMessageBusService, RabbitMqService>();
 
+        // Add JWT Configuration
+        services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+
         // Add Repositories
         services.AddScoped<IConfigurationRepository, ConfigurationRepository>();
         services.AddScoped<IEnvironmentRepository, EnvironmentRepository>();
         services.AddScoped<IConfigurationGroupRepository, ConfigurationGroupRepository>();
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
         services.AddScoped<IApplicationUserRepository, ApplicationUserRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
 
         // Add Infrastructure Services
         services.AddScoped<IConfigurationCacheService, ConfigurationCacheService>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IPasswordService, PasswordService>();
+        services.AddScoped<ITokenService, TokenService>();
 
         return services;
     }

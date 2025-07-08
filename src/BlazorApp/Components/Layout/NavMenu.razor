@@ -1,7 +1,12 @@
 ﻿@rendermode InteractiveServer
 @using Radzen
 @using Radzen.Blazor
+@using Client.Services
+@using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager Navigation
+@inject IAuthenticationService AuthService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NotificationService NotificationService
 
 <div class="nav-header">
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-p-4">
@@ -10,36 +15,116 @@
     </RadzenStack>
 </div>
 
-<RadzenPanelMenu class="nav-menu-custom">
-    <RadzenPanelMenuItem Text="Dashboard" Icon="dashboard" Path="/" />
+<AuthorizeView>
+    <Authorized>
+        <div class="user-info rz-p-4 rz-border-bottom-1">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenIcon Icon="account_circle" Style="color: var(--rz-primary);" />
+                <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 500;">
+                    @context.User.Identity?.Name
+                </RadzenText>
+            </RadzenStack>
+        </div>
 
-    <RadzenPanelMenuItem Text="Configurations" Icon="settings" Expanded="_configurationsExpanded">
-        <RadzenPanelMenuItem Text="All Configurations" Icon="list" Path="/configurations" />
-        <RadzenPanelMenuItem Text="Create Configuration" Icon="add" Path="/configurations/create" />
-    </RadzenPanelMenuItem>
+        <RadzenPanelMenu class="nav-menu-custom">
+            <RadzenPanelMenuItem Text="Dashboard" Icon="dashboard" Path="/" />
 
-    <RadzenPanelMenuItem Text="Environments" Icon="cloud_queue" Expanded="_environmentsExpanded">
-        <RadzenPanelMenuItem Text="All Environments" Icon="storage" Path="/environments" />
-        <RadzenPanelMenuItem Text="Create Environment" Icon="cloud_upload" Path="/environments/create" />
-    </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="Configurations" Icon="settings" Expanded="_configurationsExpanded">
+                <RadzenPanelMenuItem Text="All Configurations" Icon="list" Path="/configurations" />
+                <RadzenPanelMenuItem Text="Create Configuration" Icon="add" Path="/configurations/create" />
+            </RadzenPanelMenuItem>
 
-    <RadzenPanelMenuItem Text="Groups" Icon="account_tree" Expanded="_groupsExpanded">
-        <RadzenPanelMenuItem Text="All Groups" Icon="folder_open" Path="/groups" />
-        <RadzenPanelMenuItem Text="Create Group" Icon="create_new_folder" Path="/groups/create" />
-    </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="Environments" Icon="cloud_queue" Expanded="_environmentsExpanded">
+                <RadzenPanelMenuItem Text="All Environments" Icon="storage" Path="/environments" />
+                <RadzenPanelMenuItem Text="Create Environment" Icon="cloud_upload" Path="/environments/create" />
+            </RadzenPanelMenuItem>
 
-    <RadzenPanelMenuItem Text="Audit Logs" Icon="assignment" Path="/audit" />
-    <RadzenPanelMenuItem Text="System Settings" Icon="settings" Path="/settings" />
-</RadzenPanelMenu>
+            <RadzenPanelMenuItem Text="Groups" Icon="account_tree" Expanded="_groupsExpanded">
+                <RadzenPanelMenuItem Text="All Groups" Icon="folder_open" Path="/groups" />
+                <RadzenPanelMenuItem Text="Create Group" Icon="create_new_folder" Path="/groups/create" />
+            </RadzenPanelMenuItem>
+
+            <RadzenPanelMenuItem Text="Audit Logs" Icon="assignment" Path="/audit" />
+            <RadzenPanelMenuItem Text="System Settings" Icon="settings" Path="/settings" />
+        </RadzenPanelMenu>
+
+        <div class="logout-section rz-p-4 rz-border-top-1">
+            <RadzenButton Click="@HandleLogout"
+                        Variant="Variant.Text"
+                        ButtonStyle="ButtonStyle.Danger"
+                        Icon="logout"
+                        Text="Sign Out"
+                        Style="width: 100%"
+                        IsBusy="@isLoggingOut" />
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="login-prompt rz-p-4 rz-text-align-center">
+            <RadzenStack Gap="1rem">
+                <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">
+                    Please sign in to access the application
+                </RadzenText>
+                <RadzenButton Click="@HandleSignInClick"
+                            Variant="Variant.Filled"
+                            ButtonStyle="ButtonStyle.Primary"
+                            Icon="login"
+                            Text="Sign In"
+                            Style="width: 100%" />
+            </RadzenStack>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
 
 @code {
     private bool _configurationsExpanded = true;
     private bool _environmentsExpanded = false;
     private bool _groupsExpanded = false;
+    private bool isLoggingOut = false;
 
     protected override void OnInitialized()
     {
         Console.WriteLine("NavMenu initialized");
+    }
+
+    private void HandleSignInClick()
+    {
+        Navigation.NavigateTo("/login");
+    }
+
+    private async Task HandleLogout()
+    {
+        isLoggingOut = true;
+        StateHasChanged();
+
+        try
+        {
+            await AuthService.LogoutAsync();
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Info,
+                Summary = "Logged Out",
+                Detail = "You have been successfully logged out.",
+                Duration = 3000
+            });
+
+            Navigation.NavigateTo("/login", true);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Logout Error",
+                Detail = "An error occurred during logout.",
+                Duration = 5000
+            });
+        }
+        finally
+        {
+            isLoggingOut = false;
+            StateHasChanged();
+        }
     }
 }
 

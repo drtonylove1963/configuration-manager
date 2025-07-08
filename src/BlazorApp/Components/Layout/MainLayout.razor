@@ -1,29 +1,34 @@
 ﻿@inherits LayoutComponentBase
 @implements IDisposable
+@using Microsoft.AspNetCore.Components.Authorization
 
 @inject ICurrentUserService CurrentUserService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IThemeService ThemeService
 @inject IJSRuntime JSRuntime
-<RadzenNotification />
-<RadzenDialog />
+@inject AuthenticationStateProvider AuthStateProvider
 
-<RadzenLayout>
-    <RadzenHeader>
-        <HeaderControls />
-    </RadzenHeader>
+<CascadingAuthenticationState>
+    <RadzenNotification />
+    <RadzenDialog />
 
-    <RadzenSidebar @bind-Expanded="_drawerOpen">
-        <NavMenu />
-    </RadzenSidebar>
+    <RadzenLayout>
+        <RadzenHeader>
+            <HeaderControls />
+        </RadzenHeader>
 
-    <RadzenBody>
-        <div class="rz-p-4">
-            @Body
-        </div>
-    </RadzenBody>
-</RadzenLayout>
+        <RadzenSidebar @bind-Expanded="_drawerOpen">
+            <NavMenu />
+        </RadzenSidebar>
+
+        <RadzenBody>
+            <div class="rz-p-4">
+                @Body
+            </div>
+        </RadzenBody>
+    </RadzenLayout>
+</CascadingAuthenticationState>
 
 @code {
     private bool _drawerOpen = true;

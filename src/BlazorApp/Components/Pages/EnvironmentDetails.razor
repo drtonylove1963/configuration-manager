@@ -1,0 +1,182 @@
+@page "/environments/{Id:guid}"
+@rendermode InteractiveServer
+
+@using Client.Services
+@using Application.DTOs.Environment
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IEnvironmentApiClient EnvironmentClient
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>Environment Details</PageTitle>
+
+<div class="rz-p-4">
+    @if (_environment != null)
+    {
+        <RadzenBreadCrumb class="rz-mb-4">
+            <RadzenBreadCrumbItem Path="/" Text="Dashboard" />
+            <RadzenBreadCrumbItem Path="/environments" Text="Environments" />
+            <RadzenBreadCrumbItem Text="@_environment.Name" />
+        </RadzenBreadCrumb>
+
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Gap="1rem" class="rz-mb-4">
+            <RadzenText TextStyle="TextStyle.H4">@_environment.Name</RadzenText>
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                <RadzenButton Text="Edit"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Icon="edit"
+                              Click="@EditEnvironment" />
+                <RadzenButton Text="Back to List"
+                              ButtonStyle="ButtonStyle.Secondary"
+                              Icon="arrow_back"
+                              Click="@(() => Navigation.NavigateTo("/environments"))" />
+            </RadzenStack>
+        </RadzenStack>
+
+        <RadzenRow Gap="2rem">
+            <RadzenColumn Size="12" SizeMD="8">
+                <RadzenCard>
+                    <RadzenStack Gap="1rem">
+                        <RadzenText TextStyle="TextStyle.H6">Environment Information</RadzenText>
+                        
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-secondary">Name</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">@_environment.Name</RadzenText>
+                        </RadzenStack>
+
+                        @if (!string.IsNullOrEmpty(_environment.Description))
+                        {
+                            <RadzenStack Gap="0.5rem">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-secondary">Description</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1">@_environment.Description</RadzenText>
+                            </RadzenStack>
+                        }
+
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-secondary">Sort Order</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">@_environment.SortOrder</RadzenText>
+                        </RadzenStack>
+
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-secondary">Status</RadzenText>
+                            <RadzenBadge BadgeStyle="@(_environment.IsActive ? BadgeStyle.Success : BadgeStyle.Danger)" 
+                                         Text="@(_environment.IsActive ? "Active" : "Inactive")" />
+                        </RadzenStack>
+
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-secondary">Created</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">@_environment.CreatedAt.ToString("MMM dd, yyyy 'at' h:mm tt")</RadzenText>
+                        </RadzenStack>
+
+                        @if (_environment.UpdatedAt.HasValue)
+                        {
+                            <RadzenStack Gap="0.5rem">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-secondary">Last Updated</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1">@_environment.UpdatedAt.Value.ToString("MMM dd, yyyy 'at' h:mm tt")</RadzenText>
+                            </RadzenStack>
+                        }
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="4">
+                <RadzenCard>
+                    <RadzenStack Gap="1rem">
+                        <RadzenText TextStyle="TextStyle.H6">Quick Actions</RadzenText>
+                        
+                        <RadzenButton Text="Edit Environment"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Icon="edit"
+                                      Style="width: 100%"
+                                      Click="@EditEnvironment" />
+
+                        @if (!_environment.IsActive)
+                        {
+                            <RadzenButton Text="Activate Environment"
+                                          ButtonStyle="ButtonStyle.Success"
+                                          Icon="check_circle"
+                                          Style="width: 100%"
+                                          Click="@ActivateEnvironment" />
+                        }
+
+                        <RadzenButton Text="View All Environments"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Icon="list"
+                                      Style="width: 100%"
+                                      Click="@(() => Navigation.NavigateTo("/environments"))" />
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+    }
+    else if (_loading)
+    {
+        <RadzenStack Gap="2rem" class="rz-text-align-center rz-p-8">
+            <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+            <RadzenText TextStyle="TextStyle.Body1">Loading environment details...</RadzenText>
+        </RadzenStack>
+    }
+    else
+    {
+        <RadzenStack Gap="2rem" class="rz-text-align-center rz-p-8">
+            <RadzenIcon Icon="error" Style="font-size: 4rem; color: var(--rz-danger);" />
+            <RadzenText TextStyle="TextStyle.H5">Environment Not Found</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body1">The requested environment could not be found.</RadzenText>
+            <RadzenButton Text="Back to Environments"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Icon="arrow_back"
+                          Click="@(() => Navigation.NavigateTo("/environments"))" />
+        </RadzenStack>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private EnvironmentDto? _environment;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEnvironment();
+    }
+
+    private async Task LoadEnvironment()
+    {
+        _loading = true;
+        try
+        {
+            _environment = await EnvironmentClient.GetByIdAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error loading environment: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void EditEnvironment()
+    {
+        Navigation.NavigateTo($"/environments/{Id}/edit");
+    }
+
+    private async Task ActivateEnvironment()
+    {
+        if (_environment == null) return;
+
+        try
+        {
+            await EnvironmentClient.ActivateAsync(_environment.Id);
+            NotificationService.Notify(NotificationSeverity.Success, "Success", $"Environment '{_environment.Name}' activated successfully");
+            await LoadEnvironment(); // Reload to get updated status
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"Error activating environment: {ex.Message}");
+        }
+    }
+}
